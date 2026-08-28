@@ -1,90 +1,359 @@
 ---
-import { SITE } from "@/consts";
-import Layout from "@/layouts/Layout.astro";
+// src/pages/projects/[...id].astro - WERSJA 1: Układ pionowy (Image -> Content -> Gallery)
+import Layout from "../../layouts/Layout.astro";
+import BackButton from "../../components/BackButton.astro";
+import ButtonPrimary from "../../components/ButtonPrimary.astro";
+import ButtonSecondary from "../../components/ButtonSecondary.astro";
+import Partners from "@/components/Partners.astro";
 import { getCollection, render, type CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
 
 export async function getStaticPaths() {
-    const allProjects: CollectionEntry<"projects">[] =
-        await getCollection("projects");
+  const allProjects: CollectionEntry<"projects">[] = await getCollection("projects");
 
-    return allProjects.map((project) => ({
-        params: { id: project.id },
-        props: { project },
-    }));
+  return allProjects.map((project) => ({
+    params: { id: project.id },
+    props: { project },
+  }));
 }
 
 const { project } = Astro.props;
-
 const { Content } = await render(project);
+
+const imageUrl = project.data.image?.url;
+const imageAlt = project.data.image?.alt || project.data.title;
 ---
 
 <Layout title={project.data.title} description={project.data.description}>
-    <div class="container mx-auto space-y-8 pt-18 px-6">
-        <button
-            class="flex gap-2 items-center text-secondary hover:text-primary cursor-pointer pl-2 my-6"
-            title="back"
-            id="back-button"
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-move-left-icon lucide-move-left"
-                ><path d="M6 8L2 12L6 16"></path><path d="M2 12H22"></path></svg
-            >
-            <span>Back</span>
-        </button>
-        <div
-            class="flex justify-between md:items-center pb-4 border-b border-dashed border-secondary gap-4 flex-col md:flex-row"
-        >
-            <div class="space-y-4">
-                <h1 class="heading text-3xl md:text-5xl uppercase">
-                    {project.data.title}
-                </h1>
-                <p>{project.data.description}</p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4">
-                <a
-                    href={project.data.githubUrl}
-                    class="w-full sm:w-auto flex items-center justify-center bg-primary rounded-2xl py-3 px-6 sm:py-4 sm:px-10 cursor-pointer hover:bg-background hover:outline hover:outline-1 hover:outline-dashed hover:outline-secondary hover:text-foreground transition"
-                >
-                    Source
-                </a>
-                <a
-                    href={project.data.liveUrl}
-                    class="w-full sm:w-auto flex items-center justify-center bg-foreground text-background rounded-2xl py-3 px-6 sm:py-4 sm:px-10 cursor-pointer hover:bg-background hover:outline hover:outline-1 hover:outline-dashed hover:outline-secondary hover:text-foreground transition"
-                >
-                    Live Demo
-                </a>
-            </div>
-        </div>
-
-        <div
-            class="w-full lg:h-[70vh] aspect-[610/400] overflow-hidden rounded-2xl"
-        >
-            <img
-                src={project.data.image.url}
-                alt={project.data.image.alt}
-                class="w-full h-full object-contain"
-            />
-        </div>
-        <article
-            class="px-3 flex-2 mx-auto border-b border-dashed border-secondary mb-18"
-        >
-            <Content />
-        </article>
+  <div class="project-details">
+    <div class="project-details__back-wrapper">
+      <BackButton fallbackHref="/projects" />
     </div>
 
-    <script is:inline>
-        document.getElementById("back-button").addEventListener("click", () => {
-            window.history.back();
-        });
-    </script>
+    <header class="project-details__header">
+      <div class="project-details__header-info">
+        <!-- <h1 class="project-details__title">
+          {project.data.title}
+        </h1> -->
+        <h1>
+          Śląski Diament Posłuszeństwa<br><span>{project.data.title}</span>
+        </h1>
+        <p class="project-details__description">{project.data.description}</p>
+      </div>
+
+      <div class="project-details__actions">
+        {
+          project.data.formUrl && (
+            <ButtonPrimary
+              href={project.data.formUrl}
+              icon="📝"
+              text="Zapisz się"
+              target="_blank"
+            />
+          )
+        }
+        {
+          project.data.facebookUrl && (
+            <ButtonSecondary
+              href={project.data.facebookUrl}
+              icon="🌐"
+              text="Facebook"
+              target="_blank"
+            />
+          )
+        }
+      </div>
+    </header>
+
+    <div class="project-details__body">
+      {
+        imageUrl && (
+          <div class="project-details__main-image-wrapper">
+            <Image
+              src={imageUrl}
+              alt={imageAlt}
+              inferSize={true}
+              class="project-details__main-image"
+              loading="eager"
+            />
+          </div>
+        )
+      }
+
+      <article class="project-details__content">
+        <Content />
+      </article>
+      {project.data.partners && <Partners partners={project.data.partners} />}
+    </div>
+
+    
+
+    {
+      project.data.gallery && project.data.gallery.length > 0 && (
+        <section class="project-details__gallery" aria-labelledby="gallery-heading">
+          <h2 id="gallery-heading" class="project-details__gallery-title">
+            Galeria zdjęć
+          </h2>
+
+          <div class="project-details__gallery-grid">
+            {project.data.gallery.map((img) => (
+              <div class="project-details__gallery-item">
+                <Image
+                  src={img.url}
+                  alt={img.alt || `Zdjęcie w galerii ${project.data.title}`}
+                  inferSize={true}
+                  class="project-details__gallery-image"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </div>
 </Layout>
+
+<style lang="scss">
+  @use "sass:color";
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+
+  .project-details {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem;
+
+    &__back-wrapper {
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    &__header {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px dashed color.mix($color-text, $color-bg, 30%);
+
+      @include respond-to('md') {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    &__header-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 52rem;
+    }
+
+    &__title {
+      font-size: 1.875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      line-height: 1.2;
+      color: $color-primary;
+
+      @include respond-to('md') {
+        font-size: 3rem;
+      }
+
+      span {
+        font-size: 1.25rem;
+
+        @include respond-to('md') {
+          font-size: 1.75rem;
+        }
+      }
+    }
+
+    &__description {
+      font-size: 1.5rem;
+      line-height: 1.6;
+      color: $color-text;
+    }
+
+    &__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+
+      @include respond-to('sm') {
+        flex-direction: row;
+        width: auto;
+      }
+    }
+
+    :global(.project-details__btn) {
+      width: 100%;
+
+      @include respond-to('sm') {
+        width: auto;
+      }
+    }
+
+    // Układ pionowy dla sekcji głównej
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+      margin-top: 2.5rem;
+    }
+
+    &__main-image-wrapper {
+      width: 100%;
+      aspect-ratio: 610 / 400;
+      overflow: hidden;
+      border-radius: 1rem;
+
+      @include respond-to('md') {
+        aspect-ratio: 21 / 9;
+      }
+    }
+
+    &__main-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &__content {
+      max-width: 52rem;
+      width: 100%;
+      margin: auto;
+      font-size: 1.125rem;
+      line-height: 1.7;
+      color: $color-text;
+
+      // WYŁĄCZENIE SCOPED CSS DLA CAŁEJ ZAWARTOŚCI Z MDX
+      // Zapis :global(img) wewnątrz .project-details__content generuje w CSS selektor:
+      // .project-details__content[data-astro-cid-omsmup2h] img { ... }
+      // bez nakładania atrybutu na sam obrazek!
+      :global(img) {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: 450px;
+        object-fit: cover;
+        border-radius: 1rem;
+        margin: 0 auto;
+      }
+
+      :global(p:has(img)) {
+        margin: 2rem 0;
+        display: flex;
+        justify-content: center;
+      }
+
+      :global(h2) {
+        font-size: 1.75rem;
+        text-transform: none;
+        margin-top: 3rem;
+        margin-bottom: 1.5rem;
+      }
+
+      :global(ul) {
+        list-style-type: square;
+      }
+
+      :global(h3) {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+      }
+
+      :global(p) {
+        margin-bottom: 1.25rem;
+        line-height: 180%;
+      }
+
+      :global(strong) {
+        font-weight: 600;
+        color: $color-primary;
+      }
+
+      :global(ul),
+      :global(ol) {
+        margin: 0.25rem 0;
+      }
+
+      :global(ul) {
+        list-style: none;
+      }
+
+      :global(ul li) {
+        position: relative;
+        padding-left: 1.75rem;
+        margin-bottom: 0.75rem;
+        line-height: 1.6;
+
+        // Propozycja 1: Ręcznie rysowany diament z borderów (Czysty CSS)
+        &::before {
+          content: "";
+          position: absolute;
+          left: 0.25rem;
+          top: 0.55em; // Wyrównanie do pierwszej linii tekstu
+          width: 0.5rem;
+          height: 0.5rem;
+          background-color: $color-accent;
+          transform: rotate(45deg); // Obrót kwadratu w diament
+          transition: transform $transition-base, background-color $transition-base;
+        }
+      }
+
+      :global(ol li) {
+        position: relative;
+        margin-left: 1.25rem;
+        padding-left: 0.5rem;
+        margin-bottom: 0.75rem;
+        line-height: 1.6;
+      }
+
+    } // <- TUTAJ BRAKOWAŁO NAWIASU ZAMYKAJĄCEGO &__content
+
+    // Sekcja galerii na pełną szerokość pod treścią
+    &__gallery {
+      margin-top: 3rem;
+      margin-bottom: 4.5rem;
+      padding-top: 3rem;
+      border-top: 1px dashed color.mix($color-text, $color-bg, 30%);
+    }
+
+    &__gallery-title {
+      font-size: 1.75rem;
+      text-transform: none;
+      margin-top: 3rem;
+      margin-bottom: 1.5rem;
+    }
+
+    &__gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    &__gallery-item {
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      border-radius: 1rem;
+      background-color: color.mix($color-text, $color-bg, 5%);
+    }
+
+    &__gallery-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform $transition-base;
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+  }
+</style>

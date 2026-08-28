@@ -1,0 +1,71 @@
+---
+// src/components/BackButton.astro
+interface Props {
+  fallbackHref?: string;
+  class?: string;
+}
+
+const { fallbackHref = "/blog", class: className = "" } = Astro.props;
+---
+
+<a
+  href={fallbackHref}
+  id="back-button"
+  class:list={["back-button", className]}
+  aria-label="Wróć do poprzedniej strony"
+>
+  <span class="back-button__icon" aria-hidden="true">👈</span>
+  <span class="back-button__text">Wstecz</span>
+</a>
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px; // Minimalny obszar dotykowy (WCAG 2.2)
+    padding: 0.5rem;
+    color: $color-primary;;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color $transition-base;
+
+    &__text {
+      text-decoration: underline;
+    }
+
+    &:hover {
+      color: $color-accent;
+    }
+
+    &:focus-visible {
+      outline: 3px solid $color-accent;
+      outline-offset: 2px;
+      border-radius: 0.25rem;
+    }
+
+    &__icon {
+      font-size: 1.25em;
+      line-height: 1;
+    }
+  }
+</style>
+
+<script>
+  // Płynny powrót z wykorzystaniem historii przeglądarki
+  const backBtn = document.getElementById("back-button");
+  if (backBtn) {
+    backBtn.addEventListener("click", (e) => {
+      if (window.history.length > 1) {
+        e.preventDefault();
+        window.history.back();
+      }
+    });
+  }
+</script>

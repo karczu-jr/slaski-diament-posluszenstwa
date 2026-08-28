@@ -1,0 +1,39 @@
+---
+// src/components/Tag.astro
+interface Props {
+  text: string;
+  icon?: string; // Pozwala przekazać emoji lub ikonę tekstową
+  class?: string;
+}
+
+const { text, icon, class: className = '' } = Astro.props;
+---
+
+<span class:list={['tag', className]}>
+  {icon && <span class="tag__icon" aria-hidden="true">{icon}</span>}
+  <span class="tag__text">{text}</span>
+</span>
+
+<style lang="scss">
+  @use '../styles/variables' as *;
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: 2rem;
+    border: 1px dashed $color-text;
+    font-size: 1rem;
+    font-weight: 500;
+    color: $color-text;
+    background-color: transparent;
+    line-height: 1;
+
+    &__icon {
+      font-size: 1.1em;
+      line-height: 1;
+    }
+  }
+</style>

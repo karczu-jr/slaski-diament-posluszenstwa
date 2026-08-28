@@ -1,27 +1,33 @@
 export const SITE = {
   URL: "https://your_site.com",
-  TITLE: "Mono Lume",
+  TITLE: "LOGO",
   DESCRIPTION:
     "A full-stack developer with a strong focus on building fast, accessible, and maintainable web applications.",
   EMAIL: "hi@monolume.com",
 };
 
-export const HOME = {
-  TITLE: "Home",
-  DESCRIPTION:
-    "A personal blog about coding, building projects, and figuring things out",
-};
-
 export const BLOG = {
-  TITLE: "Blog",
+  TITLE: "Newsy | Śląski diament posłuszeństwa - zawody Obedience",
   DESCRIPTION:
     "A collection of articles on programming, projects and other stuff",
 };
 
 export const PROJECTS = {
-  TITLE: "Projects",
+  TITLE: "Edycje zawodów | Śląski diament posłuszeństwa - zawody Obedience",
   DESCRIPTION:
     "A collection of my projects with links to repositories and live demos.",
+};
+
+export const ABOUT = {
+  TITLE: "O nas | Śląski diament posłuszeństwa - zawody Obedience",
+  DESCRIPTION:
+    "A personal blog about coding, building projects, and figuring things out",
+};
+
+export const CONTACT = {
+  TITLE: "Kontakt | Śląski diament posłuszeństwa - zawody Obedience",
+  DESCRIPTION:
+    "A personal blog about coding, building projects, and figuring things out",
 };
 
 export const SOCIALS = [
@@ -30,11 +36,11 @@ export const SOCIALS = [
     HREF: "https://x.com/your_username",
   },
   {
-    NAME: "Linkedin",
+    NAME: "Facebook",
     HREF: "https://linkedin.com/",
   },
   {
-    NAME: "Github",
+    NAME: "Instagram",
     HREF: "https://github.com/your_username",
   },
 ];

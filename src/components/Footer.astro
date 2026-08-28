@@ -1,64 +1,204 @@
 ---
-import { SITE, SOCIALS } from "@/consts";
+// src/components/Footer.astro
+import { SITE, SOCIALS } from "../consts";
 import { getCollection, type CollectionEntry } from "astro:content";
 
-const Projects: CollectionEntry<"projects">[] = (
+const projects: CollectionEntry<"projects">[] = (
   await getCollection("projects")
 ).slice(0, 3);
+
+const currentYear = new Date().getFullYear();
 ---
 
-<footer class="bg-primary container mx-auto rounded-t-[80px] p-10 space-y-8">
-  <div
-    class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
-  >
-    <h2 class="text-5xl lg:text-9xl uppercase">{SITE.TITLE}</h2>
-    <p class="text-2xl lg:text-3xl max-w-[760px]">
-      Simplicity is the ultimate sophistication — especially in code.
-    </p>
+<footer class="footer">
+  <div class="footer__container">
+    <div class="footer__hero">
+      <h2 class="footer__title">{SITE.TITLE}</h2>
+      <blockquote class="footer__quote">
+        <p>Z miłości do Obedience ♥️</p>
+      </blockquote>
+    </div>
+
+    <div class="footer__grid">
+      <nav class="footer__column" aria-labelledby="footer-contact-heading">
+        <h3 id="footer-contact-heading" class="footer__heading">Kontakt</h3>
+        <ul class="footer__list">
+          <li class="footer__item">
+            <a href={`mailto:${SITE.EMAIL}`} class="footer__link">
+              {SITE.EMAIL}
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <nav class="footer__column" aria-labelledby="footer-nav-heading">
+        <h3 id="footer-nav-heading" class="footer__heading">Nawigacja</h3>
+        <ul class="footer__list">
+          <li class="footer__item"><a href="/" class="footer__link">Home</a></li>
+          <li class="footer__item"><a href="/about" class="footer__link">O nas</a></li>
+          <li class="footer__item"><a href="/blog" class="footer__link">Newsy</a></li>
+          <li class="footer__item"><a href="/projects" class="footer__link">Zawody</a></li>
+          <li class="footer__item"><a href="/contact" class="footer__link">Kontakt</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer__column" aria-labelledby="footer-socials-heading">
+        <h3 id="footer-socials-heading" class="footer__heading">Sociale</h3>
+        <ul class="footer__list">
+          {
+            SOCIALS.map((link) => (
+              <li class="footer__item">
+                <a href={link.HREF} class="footer__link" target="_blank" rel="noopener noreferrer">
+                  {link.NAME}
+                  <span class="sr-only"> (otwiera się w nowej karcie)</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <nav class="footer__column" aria-labelledby="footer-projects-heading">
+        <h3 id="footer-projects-heading" class="footer__heading">Ostatnie zawody</h3>
+        <ul class="footer__list">
+          {
+            projects.map((project) => (
+              <li class="footer__item">
+                <a href={`/projects/${project.id}`} class="footer__link">
+                  {project.data.title}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer__bottom">
+      <p class="footer__copyright">
+        © {currentYear} {SITE.TITLE}
+      </p>
+    </div>
   </div>
-  <div class="flex flex-col sm:flex-row sm:flex-wrap justify-between gap-10">
-    <div>
-      <h3 class="mb-2 text-xl">Contact</h3>
-      <ul>
-        <li><a href="mailto:someone@example.com">{SITE.EMAIL}</a></li>
-      </ul>
-    </div>
-    <div>
-      <h3 class="mb-2 text-xl">Navigation</h3>
-      <ul class="space-y-1 text-secondary">
-        <li><a href="/">Home</a></li>
-        <li><a href="/about">About</a></li>
-        <li><a href="/blog">Blog</a></li>
-        <li><a href="/projects">Projects</a></li>
-        <li><a href="/contact">Contact</a></li>
-      </ul>
-    </div>
-    <div>
-      <h3 class="mb-2 text-xl">Socials</h3>
-      <ul class="space-y-1 text-secondary">
-        {
-          SOCIALS.map((link) => (
-            <li>
-              <a href={link.HREF}>{link.NAME}</a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-    <div>
-      <h3 class="mb-2 text-xl">Projects</h3>
-      <ul class="space-y-1 text-secondary">
-        {
-          Projects.map((project) => (
-            <li>
-                <a href=`/projects/${project.id}`>{project.data.title}</a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </div>
-  <span class="block text-center text-sm opacity-70">
-    © {SITE.TITLE}. Built with Astro
-  </span>
 </footer>
+
+<style lang="scss">
+  @use '../styles/variables' as *;
+  @use '../styles/mixins' as *;
+
+  .footer {
+    background-color: $color-primary;
+    color: #ffffff;
+    border-top-left-radius: 2.5rem;
+    border-top-right-radius: 2.5rem;
+    padding: 2.5rem 1.5rem;
+
+    @include respond-to('lg') {
+      border-top-left-radius: 5rem;
+      border-top-right-radius: 5rem;
+      padding: 3.5rem 2.5rem;
+    }
+
+    &__container {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    &__hero {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5rem;
+
+      @include respond-to('lg') {
+        flex-direction: row;
+        gap: 2rem;
+        align-items: baseline;
+      }
+    }
+
+    &__title {
+      font-size: 3rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1;
+
+      @include respond-to('lg') {
+        font-size: 6rem;
+      }
+    }
+
+    &__quote {
+      font-size: 1.25rem;
+      line-height: 1.4;
+      max-width: 760px;
+      margin: 0;
+
+      @include respond-to('lg') {
+        font-size: 1.75rem;
+      }
+    }
+
+    &__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+
+      @include respond-to('sm') {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      @include respond-to('lg') {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    &__heading {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    &__list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    &__link {
+      color: rgba(#ffffff, 0.8);
+      text-decoration: none;
+      transition: color $transition-base;
+      display: inline-block;
+      min-height: 24px;
+
+      &:hover {
+        color: $color-accent;
+        text-decoration: underline;
+      }
+
+      &:focus-visible {
+        outline: 3px solid $color-accent;
+        outline-offset: 3px;
+        border-radius: 0.25rem;
+      }
+    }
+
+    &__bottom {
+      border-top: 1px solid rgba(#ffffff, 0.1);
+      padding-top: 1.5rem;
+      text-align: center;
+    }
+
+    &__copyright {
+      font-size: 0.875rem;
+      opacity: 0.7;
+    }
+  }
+</style>

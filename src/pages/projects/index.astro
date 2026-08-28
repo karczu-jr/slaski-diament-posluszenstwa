@@ -1,18 +1,72 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import Card from "@/components/Card.astro";
+// src/pages/projects/index.astro
+import Layout from "../../layouts/Layout.astro";
+import Card from "../../components/Card.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
-import { PROJECTS } from "@/consts";
+import { PROJECTS } from "../../consts";
 
-const allProjects: CollectionEntry<"projects">[] =
-    await getCollection("projects");
+const allProjects: CollectionEntry<"projects">[] = (await getCollection("projects")).sort(
+  (a, b) => (b.data.date?.valueOf() || 0) - (a.data.date?.valueOf() || 0)
+);
 ---
 
 <Layout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>
-    <section id="Projects" class="container mx-auto px-6 pt-18">
-        <h2 class="heading text-5xl md:text-9xl uppercase mr-4 md:mr-8 my-8">
-            work
-        </h2>
-        {allProjects.map((project) => <Card entry={project} />)}
-    </section>
+  <section id="projects" class="projects-page" aria-labelledby="projects-heading">
+    <h1 id="projects-heading" class="projects-page__title">
+      Zawody
+    </h1>
+
+    <ul class="projects-page__list" role="list">
+      {
+        allProjects.map((project) => (
+          <li class="projects-page__item">
+            <Card entry={project} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
 </Layout>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+
+  .projects-page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem;
+
+    &__title {
+      font-size: 3rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: $color-primary;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+      line-height: 1;
+
+      @include respond-to('md') {
+        font-size: 6rem;
+      }
+
+      @include respond-to('lg') {
+        font-size: 8rem;
+      }
+    }
+
+    &__list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    &__item {
+      margin: 0;
+      padding: 0;
+    }
+  }
+</style>

@@ -1,80 +1,140 @@
-<section id="About" class="container mx-auto mb-28 p-6">
-    <h2 class="heading text-5xl md:text-9xl uppercase">About me</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 items-center md:p-0 gap-8">
-        <div class="space-y-6">
-            <div
-                class="w-full aspect-[668/516] md:max-w-[668px] overflow-hidden rounded-3xl"
-            >
-                <img
-                    src="/portrait.webp"
-                    alt="About Me Image"
-                    class="w-full h-full object-cover"
-                />
-            </div>
-        </div>
+---
+// src/components/About.astro
+import { Image } from 'astro:assets';
+import portraitImg from '../assets/img/portrait.webp';
+import Tag from './Tag.astro';
 
-        <div>
-            <div class="text-lg md:text-2xl text-secondary space-y-4">
-                <p>
-                    I'm a full-stack developer with a strong focus on building
-                    fast, accessible, and maintainable web applications. Over
-                    the past 6 years, I’ve worked on high-traffic production
-                    systems, internal tools for startups, and indie products
-                    used by thousands.
-                </p>
-                <p>
-                    I specialize in JavaScript, TypeScript, and modern
-                    frameworks like Astro, React, and Svelte — but I’m most
-                    passionate about writing clean, resilient code that scales.
-                </p>
-            </div>
-            <div>
-                <h3 class="heading text-2xl uppercase my-8 text-secondary">
-                    My Skills
-                </h3>
-                <div class="flex flex-wrap gap-4 mt-8">
-                    <span
-                        class="inline-flex items-center justify-center rounded-4xl py-4 px-8 outline-1 outline-dashed outline-secondary"
-                    >
-                        HTML
-                    </span>
-                    <span
-                        class="inline-flex items-center justify-center rounded-4xl py-4 px-8 outline-1 outline-dashed outline-secondary"
-                    >
-                        CSS
-                    </span>
-                    <span
-                        class="inline-flex items-center justify-center rounded-4xl py-4 px-8 outline-1 outline-dashed outline-secondary"
-                    >
-                        Javascript
-                    </span>
-                    <span
-                        class="inline-flex items-center justify-center rounded-4xl py-4 px-8 outline-1 outline-dashed outline-secondary"
-                    >
-                        Typescript
-                    </span>
-                    <span
-                        class="inline-flex items-center justify-center rounded-4xl py-4 px-8 outline-1 outline-dashed outline-secondary"
-                    >
-                        ReactJS
-                    </span>
-                    <span
-                        class="inline-flex items-center justify-center rounded-4xl py-4 px-8 outline-1 outline-dashed outline-secondary"
-                    >
-                        Tailwind CSS
-                    </span>
-                    <span
-                        class="inline-flex items-center justify-center rounded-4xl py-4 px-8 outline-1 outline-dashed outline-secondary"
-                    >
-                        Express JS
-                    </span>
-                    <span
-                        class="inline-flex items-center justify-center rounded-4xl py-4 px-8 outline-1 outline-dashed outline-secondary"
-                    >
-                        MonogDB
-                    </span>
-                </div>
-            </div>
-        </div>
+const highlights = [
+  { text: 'Organizacja', icon: '🏆' },
+  { text: 'Komunikacja', icon: '💬' },
+  { text: 'Kontakt', icon: '📞' },
+  { text: 'Nagrody', icon: '🎁' },
+  { text: 'Różnorodność klas', icon: '🐕' },
+  { text: 'Zaangażowanie', icon: '🔥' },
+  { text: 'Cykliczność', icon: '🔄' }
+];
+---
+
+<section id="about" class="about" aria-labelledby="about-title">
+  <h2 id="about-title" class="about__title">O Zawodach</h2>
+  
+  <div class="about__grid">
+    <div class="about__image-wrapper">
+      <Image 
+        src={portraitImg} 
+        alt="Psy oraz przewodnicy biorący udział w zawodach obedience" 
+        class="about__image"
+        width={668}
+        height={516}
+        loading="lazy"
+      />
     </div>
+
+    <div class="about__content">
+      <div class="about__description">
+        <p>
+          Nasze zawody powstały z myślą o przewodnikach i ich psach — niezależnie od tego, czy stawiają swoje pierwsze kroki w klasie 0, czy rywalizują w wyższych klasach startowych. Dbamy o to, aby każdy start odbywał się w warunkach pełnego komfortu, wzajemnego szacunku i ducha fair play.
+        </p>
+        <p>
+          Doświadczony zespół sędziowski oraz profesjonalny plac manewrowy gwarantują najwyższą jakość organizacji i niezapomniane emocje sportowe.
+        </p>
+      </div>
+
+      <div class="about__highlights">
+        <h3 class="about__subtitle">Co nas wyróżnia</h3>
+        <ul class="about__tags-list" aria-label="Arybuty i cechy wyróżniające zawody">
+          {
+            highlights.map((item) => (
+              <li>
+                <Tag text={item.text} icon={item.icon} />
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
 </section>
+
+<style lang="scss">
+  @use '../styles/variables' as *;
+  @use '../styles/mixins' as *;
+
+  .about {
+    padding-bottom: 5rem;
+
+    &__title {
+      // font-size: 3rem;
+      // font-weight: 800;
+      // text-transform: uppercase;
+      // color: $color-primary;
+      margin-bottom: 2rem;
+
+      // @include respond-to('md') {
+      //   font-size: 6rem;
+      // }
+
+      // @include respond-to('lg') {
+      //   font-size: 8rem;
+      // }
+    }
+
+    &__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      // align-items: center;
+      gap: 2rem;
+
+      @include respond-to('md') {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 3rem;
+      }
+    }
+
+    &__image-wrapper {
+      width: 100%;
+      aspect-ratio: 668 / 516;
+      border-radius: 1.5rem;
+      overflow: hidden;
+
+      @include respond-to('md') {
+        max-width: 668px;
+        border-radius: 2rem;
+      }
+    }
+
+    &__image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &__content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    &__description {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    &__subtitle {
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      color: $color-text;
+      margin-bottom: 1.5rem;
+    }
+
+    &__tags-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+  }
+</style>

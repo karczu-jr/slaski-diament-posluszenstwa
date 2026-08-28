@@ -1,0 +1,96 @@
+---
+// src/components/ButtonSecondary.astro
+interface Props {
+  text?: string;
+  icon?: string; // Opcjonalne emoji przed tekstem
+  href?: string;
+  type?: "button" | "submit" | "reset";
+  class?: string;
+  target?: string;
+  rel?: string;
+  [key: string]: unknown;
+}
+
+const {
+  text,
+  icon,
+  href,
+  type = "button",
+  class: className = "",
+  target,
+  rel,
+  ...rest
+} = Astro.props;
+
+const isLink = Boolean(href);
+const Element = isLink ? "a" : "button";
+---
+
+<Element
+  href={href}
+  type={!isLink ? type : undefined}
+  target={target}
+  rel={target === "_blank" && !rel ? "noopener noreferrer" : rel}
+  class:list={["button-secondary", className]}
+  {...rest}
+>
+  {/* Emoji ukryte dla czytników ekranu (WCAG 2.2) */}
+  {icon && <span class="button-secondary__icon" aria-hidden="true">{icon}</span>}
+  {text ? <span class="button-secondary__text">{text}</span> : <slot />}
+</Element>
+
+<style lang="scss">
+  @use "sass:color";
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  .button-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem; // Odstęp Flexbox gwarantowany między ikona a tekstem
+    min-height: 44px; // Obszar dotykowy (WCAG 2.2)
+    padding: 0.75rem 1.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    color: $color-primary;
+    background-color: transparent;
+    border: 1px dashed $color-primary;
+    border-radius: 1rem;
+    cursor: pointer;
+    transition: background-color $transition-base, color $transition-base, border-color $transition-base, transform $transition-base;
+
+    @include respond-to('sm') {
+      min-height: 56px;
+    }
+
+    &:hover {
+      background-color: $color-primary;
+      color: $color-bg;
+      border-style: solid;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    &:focus-visible {
+      outline: 3px solid $color-accent;
+      outline-offset: 4px;
+    }
+
+    // Element BEM wyciągnięty na zewnątrz nadrzędnego selektora &
+    &__icon {
+      font-size: 1.1em;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    &__text {
+      display: inline-block;
+    }
+  }
+</style>

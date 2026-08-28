@@ -4,6 +4,8 @@ import { defineConfig, fontProviders } from "astro/config";
 import { SITE } from "./src/consts";
 import sitemap from "@astrojs/sitemap";
 
+import mdx from "@astrojs/mdx";
+
 // https://astro.build/config
 export default defineConfig({
   site: SITE.URL,
@@ -23,5 +25,5 @@ export default defineConfig({
       provider: fontProviders.google(),
     },
   ],
-  integrations: [sitemap()],
+  integrations: [sitemap(), mdx()],
 });

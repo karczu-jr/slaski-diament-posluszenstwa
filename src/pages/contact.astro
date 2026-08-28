@@ -1,9 +1,30 @@
 ---
-import ContactForm from "@/components/Contact.astro";
-import Layout from "@/layouts/Layout.astro";
-import { SITE } from "@/consts";
+// src/pages/contact.astro
+import ContactForm from "../components/Contact.astro";
+import Layout from "../layouts/Layout.astro";
+import { CONTACT } from "../consts";
 ---
 
-<Layout title={SITE.TITLE} description={SITE.DESCRIPTION}>
-    <ContactForm />
+<Layout title={CONTACT.TITLE} description={CONTACT.DESCRIPTION}>
+  <div class="contact-page">
+    <div class="contact-page__container">
+      <ContactForm />
+    </div>
+  </div>
 </Layout>
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  .contact-page {
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
+
+    &__container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+  }
+</style>

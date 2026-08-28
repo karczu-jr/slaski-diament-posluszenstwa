@@ -1,0 +1,58 @@
+// src/styles/main.scss
+@use 'variables' as *;
+@use "mixins" as *;
+@use "typography" as *;
+
+// Reset stylów bazowych
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background-color: $color-bg;
+  min-height: 100vh;
+}
+
+// Wyraźny stan skupienia klawiatury dla dostępności (WCAG 2.2)
+:focus-visible {
+  outline: 3px solid $color-accent;
+  outline-offset: 3px;
+}
+
+// Klasa pomocnicza dla czytników ekranowych
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.project-details__content,
+.post-details__content {
+  :global {
+    // Responsywna obsługa wszystkich obrazów wewnątrz artykułu (RWD)
+    img {
+      display: block;
+      width: 100%; // Rozciągnięcie do 100% szerokości kontenera <article>
+      max-width: 100%;
+      height: auto; // Zachowanie naturalnych proporcji obrazu (brak rozciągania)
+      aspect-ratio: 16 / 9; // Opcjonalnie: stałe proporcje dla spójności wizualnej
+      object-fit: cover;
+      margin: 2rem 0;
+      border-radius: 1rem; // Estetyczne zaokrąglenie rogów
+    }
+  }
+}

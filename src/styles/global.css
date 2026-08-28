@@ -8,10 +8,13 @@
   --font-geist: "Geist", sans-serif;
 
   /* colors */
-  --color-primary: oklch(86.89 0.29 142.02); /* #27FF0B*/
-  --color-background: oklch(99.7 0 0); /* #fefefe */
-  --color-foreground: oklch(0 0 0); /* #000000 */
-  --color-secondary: oklch(0.38 0 1); /* #434343*/
+  --font-color-dark: #ffffff;
+  --Font-color-light: #000000;
+  
+  --color-primary: #27FF0B; /* oklch(86.89 0.29 142.02)*/
+  --color-background: #fefefe; /* oklch(99.7 0 0) */
+  --color-foreground: #000000; /* oklch(0 0 0) */
+  --color-secondary: #434343; /* oklch(0.38 0 1)*/
 }
 
 .heading {

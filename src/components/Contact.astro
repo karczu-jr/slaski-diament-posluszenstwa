@@ -1,93 +1,234 @@
 ---
-import { SOCIALS } from "@/consts";
+// src/components/Contact.astro
+import { SOCIALS } from "../consts";
+import ButtonPrimary from "./ButtonPrimary.astro";
 ---
 
-<section id="Contact" class="container mx-auto my-28 p-10 space-y-12">
-    <h2 class="heading text-5xl lg:text-9xl uppercase">Get in Touch</h2>
+<section id="contact" class="contact" aria-labelledby="contact-title">
+  <h2 id="contact-title" class="contact__title">Masz pytania?<br>Napisz do nas 💎</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-8">
-        <div class="space-y-6">
-            <p class="text-xl lg:text-3xl max-w-xl">
-                Got an idea? A problem? A compliment? Slide into my inbox —
-                let’s make something timeless together.
-            </p>
+  <div class="contact__grid">
+    <div class="contact__info">
+      <p class="contact__description">
+        Chcesz zapytać o zawody Obedience Śląski Diament Posłuszeństwa, dołączyć do grona partnerów, czy upewnić się co do szczegółów swojego startu? Napisz do nas!
+      </p>
 
-            <div class="text-xl space-y-2">
-                {
-                    SOCIALS.map((link) => (
-                        <p>
-                            <a
-                                href={link.HREF}
-                                target="_blank"
-                                class="underline hover:text-secondary transition"
-                            >
-                                {link.NAME}
-                            </a>
-                        </p>
-                    ))
-                }
-            </div>
+      <ul class="contact__socials-list" aria-label="Social media links">
+        {
+          SOCIALS.map((link) => (
+            <li class="contact__socials-item">
+              <a
+                href={link.HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="contact__socials-link"
+              >
+                {link.NAME}
+                <span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <form class="contact__form" action="#" method="POST" novalidate>
+      <div class="contact__form-row">
+        <div class="contact__field">
+          <input
+            type="text"
+            id="name"
+            name="name"
+            class="contact__input"
+            placeholder=" "
+            required
+            aria-required="true"
+          />
+          <label for="name" class="contact__label">Imię i nazwisko*</label>
         </div>
 
-        <form class="space-y-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div class="relative">
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        class="peer border border-secondary border-dashed p-4 text-xl w-full focus:outline-none rounded-3xl placeholder-transparent"
-                        placeholder="Name"
-                        required
-                    />
-                    <label
-                        for="name"
-                        class="absolute left-4 top-4 text-xl text-gray-500 peer-placeholder-shown:top-4 peer-placeholder-shown:text-xl peer-focus:-top-2 peer-focus:text-sm peer-focus:px-2 peer-focus:text-secondary transition-all peer-focus:bg-background"
-                    >
-                        Name
-                    </label>
-                </div>
+        <div class="contact__field">
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="contact__input"
+            placeholder=" "
+            required
+            aria-required="true"
+          />
+          <label for="email" class="contact__label">Email*</label>
+        </div>
+      </div>
 
-                <div class="relative">
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        class="peer border border-secondary border-dashed p-4 text-xl w-full focus:outline-none rounded-3xl placeholder-transparent"
-                        placeholder="Email"
-                        required
-                    />
-                    <label
-                        for="email"
-                        class="absolute left-4 top-4 text-xl text-gray-500 peer-placeholder-shown:top-4 peer-placeholder-shown:text-xl peer-focus:-top-2 peer-focus:px-2 peer-focus:text-sm peer-focus:text-secondary transition-all peer-focus:bg-background"
-                    >
-                        Email
-                    </label>
-                </div>
-            </div>
+      <div class="contact__field">
+        <textarea
+          id="message"
+          name="message"
+          rows="6"
+          class="contact__textarea"
+          placeholder=" "
+          required
+          aria-required="true"></textarea>
+        <label for="message" class="contact__label">Wiadomość*</label>
+      </div>
 
-            <div class="relative">
-                <textarea
-                    id="message"
-                    name="message"
-                    rows="6"
-                    class="peer border border-secondary border-dashed p-4 text-xl w-full focus:outline-none rounded-3xl placeholder-transparent resize-none"
-                    placeholder="Message"
-                    required></textarea>
-                <label
-                    for="message"
-                    class="absolute left-4 top-4 text-xl text-gray-500 peer-placeholder-shown:top-4 peer-placeholder-shown:text-xl peer-focus:-top-2 peer-focus:text-sm peer-focus:text-secondary transition-all peer-focus:px-2 peer-focus:bg-background"
-                >
-                    Message
-                </label>
-            </div>
-
-            <button
-                type="submit"
-                class="flex items-center justify-center bg-primary rounded-2xl py-3 px-6 sm:py-4 sm:px-10 cursor-pointer hover:bg-background hover:outline hover:outline-1 hover:outline-dashed hover:outline-secondary hover:text-foreground transition"
-            >
-                Send Message
-            </button>
-        </form>
-    </div>
+      <div class="contact__actions">
+        <ButtonPrimary 
+          type="submit" 
+          text="Wyślij wiadomość" 
+          class="contact__submit-btn" 
+        />
+      </div>
+    </form>
+  </div>
 </section>
+
+<style lang="scss">
+  @use "sass:color";
+  @use '../styles/variables' as *;
+  @use '../styles/mixins' as *;
+
+  .contact {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+
+    &__title {
+      margin-bottom: 2.5rem;
+    }
+
+    &__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: start;
+      gap: 2.5rem;
+
+      @include respond-to('md') {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 3rem;
+      }
+    }
+
+    &__info {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    &__description {
+      max-width: 36rem;
+    }
+
+    &__socials-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    &__socials-link {
+      font-size: 1.25rem;
+      color: $color-text;
+      text-decoration: underline;
+      transition: color $transition-base;
+
+      &:hover {
+        color: $color-accent;
+      }
+
+      &:focus-visible {
+        outline: 3px solid $color-accent;
+        outline-offset: 3px;
+        border-radius: 0.25rem;
+      }
+    }
+
+    &__form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    &__form-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+
+      @include respond-to('sm') {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    &__field {
+      position: relative;
+      width: 100%;
+    }
+
+    &__input,
+    &__textarea {
+      width: 100%;
+      height: 62px;
+      padding: 1rem 1.25rem;
+      font-size: 1.125rem;
+      color: $color-text;
+      background-color: transparent;
+      border: 1px dashed $color-text;
+      border-radius: 1.5rem;
+      outline: none;
+      transition: border-color $transition-base, background-color $transition-base;
+
+      &:focus {
+        border-color: $color-accent;
+        border-style: solid;
+      }
+
+      &:focus-visible {
+        outline: 3px solid $color-accent;
+        outline-offset: 2px;
+      }
+    }
+
+    &__textarea {
+      resize: vertical;
+      min-height: 150px;
+    }
+
+    &__label {
+      position: absolute;
+      left: 1.25rem;
+      top: 1rem;
+      font-size: 1.125rem;
+      color: color.mix($color-text, $color-bg, 60%);
+      pointer-events: none;
+      transition: all 200ms ease-in-out;
+      background-color: transparent;
+      padding: 0 0.25rem;
+    }
+
+    &__input:focus ~ &__label,
+    &__input:not(:placeholder-shown) ~ &__label,
+    &__textarea:focus ~ &__label,
+    &__textarea:not(:placeholder-shown) ~ &__label {
+      top: -0.625rem;
+      font-size: 0.875rem;
+      color: $color-accent;
+      background-color: $color-bg;
+      font-weight: 600;
+    }
+
+    &__actions {
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    :global(.contact__submit-btn) {
+      width: 100%;
+
+      @include respond-to('sm') {
+        width: auto;
+      }
+    }
+  }
+</style>

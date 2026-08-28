@@ -1,79 +1,164 @@
 ---
-import Layout from "@/layouts/Layout.astro";
+// src/pages/blog/[...id].astro
+import Layout from "../../layouts/Layout.astro";
 import { getCollection, render, type CollectionEntry } from "astro:content";
-import FormattedDate from "@/components/FormattedDate.astro";
+import FormattedDate from "../../components/FormattedDate.astro";
+import BackButton from "../../components/BackButton.astro";
 
 export async function getStaticPaths() {
-    const posts = (await getCollection("blog"))
-        .filter((post) => !post.data.draft)
-        .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-    return posts.map((post) => ({
-        params: { id: post.id },
-        props: post,
-    }));
+  const posts = (await getCollection("blog"))
+    .filter((post) => !post.data.draft)
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  return posts.map((post) => ({
+    params: { id: post.id },
+    props: post,
+  }));
 }
+
 type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
-
 const { Content } = await render(post);
+const imageUrl = post.data.image?.url;
+const imageAlt = post.data.image?.alt || post.data.title;
 ---
 
 <Layout title={post.data.title} description={post.data.description}>
-    <div class="container mx-auto space-y-8 pt-18 px-6">
-        <button
-            class="flex gap-2 items-center text-secondary hover:text-primary cursor-pointer pl-2 my-6"
-            title="back"
-            id="back-button"
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-move-left-icon lucide-move-left"
-                ><path d="M6 8L2 12L6 16"></path><path d="M2 12H22"></path></svg
-            >
-            <span>Back</span>
-        </button>
-        <div
-            class="flex justify-between md:items-center pb-4 border-b border-dashed border-secondary gap-4 flex-col md:flex-row"
-        >
-            <div class="space-y-4">
-                <h1 class="heading text-3xl md:text-5xl uppercase">
-                    {post.data.title}
-                </h1>
-                <p>{post.data.description}</p>
-                <p class="text-secondary">
-                    <FormattedDate date={post.data.date} />
-                </p>
-            </div>
-        </div>
-        {
-            post.data.image && (
-                <div class="w-full lg:h-[70vh] aspect-[610/400] overflow-hidden rounded-2xl">
-                    <img
-                        src={post.data.image?.url}
-                        alt={post.data.image?.alt}
-                        class="w-full h-full object-contain"
-                    />
-                </div>
-            )
-        }
-
-        <article class="px-3 flex-2 mx-auto mb-18">
-            <Content />
-        </article>
+  <div class="post-details">
+    <div class="post-details__header-actions">
+      <BackButton fallbackHref="/blog" />
     </div>
 
-    <script is:inline>
-        document.getElementById("back-button").addEventListener("click", () => {
-            window.history.back();
-        });
-    </script>
+    <header class="post-details__header">
+      <div class="post-details__header-info">
+        <h1 class="post-details__title">
+          {post.data.title}
+        </h1>
+        <p class="post-details__description">{post.data.description}</p>
+        <p class="post-details__date">
+          <FormattedDate date={post.data.date} />
+        </p>
+      </div>
+    </header>
+
+    {
+      imageUrl && (
+        <div class="post-details__image-wrapper">
+          <img
+            src={imageUrl}
+            alt={imageAlt}
+            class="post-details__image"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+      )
+    }
+
+    <article class="post-details__content">
+      <Content />
+    </article>
+  </div>
 </Layout>
+
+<style lang="scss">
+  @use "sass:color";
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+  @use "../../styles/typography" as *;
+
+  .post-details {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem 4.5rem;
+
+    &__header-actions {
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    &__header {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px dashed color.mix($color-text, $color-bg, 30%);
+
+      @include respond-to('md') {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    &__header-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 36rem;
+    }
+
+    &__title {
+      font-size: 1.875rem;
+      // font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1.2;
+      color: $color-primary;
+
+      @include respond-to('md') {
+        font-size: 3rem;
+      }
+    }
+
+    &__description {
+      font-size: 1.125rem;
+      line-height: 1.6;
+      color: $color-text;
+    }
+
+    &__date {
+      color: color.mix($color-text, $color-bg, 70%);
+      font-weight: 500;
+    }
+
+    &__image-wrapper {
+      width: 100%;
+      aspect-ratio: 610 / 400;
+      border-radius: 1rem;
+      overflow: hidden;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+
+      @include respond-to('lg') {
+        height: 70vh;
+        aspect-ratio: auto;
+      }
+    }
+
+    &__image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    &__content {
+      max-width: 48rem;
+      margin: 0 auto 4.5rem;
+      padding: 0 0.75rem;
+      font-size: 1.125rem;
+      line-height: 1.7;
+      color: $color-text;
+
+      // Stylizowanie treści generowanej z plików Markdown (MDX)
+      :global(h2) {
+        font-size: 2rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+      }
+
+      :global(p) {
+        margin-bottom: 1.25rem;
+      }
+    }
+  }
+</style>

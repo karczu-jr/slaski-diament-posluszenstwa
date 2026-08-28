@@ -1,7 +1,8 @@
 ---
 title: "About This Template"
 description: "A README-style post that explains how to use and customize the blog template."
-date: "2025-02-26"
+time: "22:00"
+date: "2026-08-24"
 tags:
   - Docs
   - Template

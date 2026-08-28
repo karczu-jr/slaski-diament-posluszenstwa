@@ -1,11 +1,30 @@
 ---
-import AboutMe from "@/components/About.astro";
-import Layout from "@/layouts/Layout.astro";
-import { SITE } from "@/consts";
+// src/pages/about.astro
+import AboutMe from "../components/About.astro";
+import Layout from "../layouts/Layout.astro";
+import { ABOUT } from "../consts";
 ---
 
-<Layout title={SITE.TITLE} description={SITE.DESCRIPTION}>
-    <section class="pt-18">
-        <AboutMe />
-    </section>
+<Layout title={ABOUT.TITLE} description={ABOUT.DESCRIPTION}>
+  <div class="about-page">
+    <div class="about-page__container">
+      <AboutMe />
+    </div>
+  </div>
 </Layout>
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  .about-page {
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
+
+    &__container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+  }
+</style>

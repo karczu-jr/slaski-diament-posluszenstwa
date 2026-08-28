@@ -1,27 +1,102 @@
 ---
-import { SITE } from "@/consts";
+// src/components/Hero.astro
+import { SITE } from "../consts";
+import ButtonPrimary from "./ButtonPrimary.astro";
+import ButtonSecondary from "./ButtonSecondary.astro";
 ---
 
-<section
-    class="grid grid-cols-1 lg:grid-cols-2 items-center container mx-auto min-h-screen p-6 md:gap-16 gap-8 pt-18"
->
-    <h1 class="heading text-[clamp(6rem,20vw,12.5rem)] uppercase">
-        {SITE.TITLE}
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero__container">
+    <h1 id="hero-title" class="hero__title">
+      {SITE.TITLE}
     </h1>
-    <div class="space-y-8">
-        <p class="text-2xl text-secondary">
-            A full-stack developer with a strong focus on building fast,
-            accessible, and maintainable web applications.
-        </p>
-        <div class="flex flex-col md:flex-row gap-2.5">
-            <a
-                class="w-full sm:w-auto flex items-center justify-center bg-primary rounded-2xl py-3 px-6 sm:py-4 sm:px-10 cursor-pointer hover:bg-background hover:outline hover:outline-1 hover:outline-dashed hover:outline-secondary hover:text-foreground transition"
-                href="/projects">View Work</a
-            >
-            <a
-                class="w-full sm:w-auto flex items-center justify-center bg-foreground text-background rounded-2xl py-3 px-6 sm:py-4 sm:px-10 cursor-pointer hover:bg-background hover:outline hover:outline-1 hover:outline-dashed hover:outline-secondary hover:text-foreground transition"
-                href="#Contact">Hire me</a
-            >
-        </div>
+    
+    <div class="hero__content">
+      <p class="hero__description">
+        Śląski Diament Posłuszeństwa to wyjątkowe wydarzenie na mapie polskich sportów kynologicznych, łączące pasję do Obedience z profesjonalną organizacją i wyjątkową, rodzinną atmosferą.
+      </p>
+      
+      <div class="hero__actions">
+        <ButtonPrimary 
+          text="Najbliższe zawody" 
+          href="/projects" 
+          class="hero__btn" 
+        />
+        <ButtonSecondary 
+          text="Zapytaj nas" 
+          href="#contact" 
+          class="hero__btn" 
+        />
+      </div>
     </div>
+  </div>
 </section>
+
+<style lang="scss">
+  @use '../styles/variables' as *;
+  @use '../styles/mixins' as *;
+  @use '../styles/typography' as *;
+
+  .hero {
+    width: 100%;
+    min-height: calc(100vh - 5rem);
+    display: flex;
+    align-items: center;
+    padding-top: 4.5rem;
+    padding-bottom: 2rem;
+
+    &__container {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: center;
+      gap: 2rem;
+
+      @include respond-to('md') {
+        gap: 4rem;
+      }
+
+      @include respond-to('lg') {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    &__title {
+      font-size: clamp(6rem, 20vw, 12.5rem);
+      font-weight: 500;
+      line-height: 0.9;
+      text-transform: uppercase;
+      color: $color-primary;
+      word-break: break-word;
+    }
+
+    &__content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    &__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+
+      @include respond-to('sm') {
+        flex-direction: row;
+      }
+    }
+
+    // Klasa układowa przekazywana do komponentu przycisku
+    :global(.hero__btn) {
+      width: 100%;
+
+      @include respond-to('sm') {
+        width: auto;
+        padding-left: 2.5rem;
+        padding-right: 2.5rem;
+      }
+    }
+  }
+</style>

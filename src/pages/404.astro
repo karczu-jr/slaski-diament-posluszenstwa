@@ -1,14 +1,69 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import { SITE } from "@/consts";
+// src/pages/404.astro
+import Layout from "../layouts/Layout.astro";
+import BackButton from "../components/BackButton.astro";
+import { SITE } from "../consts";
 ---
 
-<Layout title={SITE.TITLE} description={SITE.DESCRIPTION}>
-    <main class="min-h-screen flex items-center flex-col gap-4 justify-center">
-        <h1 class="heading text-4xl uppercase">Error 404</h1>
-        <p class="text-secondary">
-            What you seek never existed, or perhaps has ceased to exist.
-        </p>
-        <a href="/" class="cursor-pointer underline">&larr; Go Back</a>
-    </main>
+<Layout title={`404: Nie znaleziono strony - ${SITE.TITLE}`} description={SITE.DESCRIPTION}>
+  <main class="error-page">
+    <div class="error-page__container">
+      <h1 class="error-page__title">Błąd 404</h1>
+      <p class="error-page__description">
+        Strona, której szukasz, nie istnieje lub została przeniesiona pod inny adres.
+      </p>
+      <div class="error-page__actions">
+        <BackButton fallbackHref="/" class="error-page__back-btn" />
+      </div>
+    </div>
+  </main>
 </Layout>
+
+<style lang="scss">
+  @use "sass:color";
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  .error-page {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4.5rem 1.5rem;
+
+    &__container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1.5rem;
+      max-width: 36rem;
+    }
+
+    &__title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: $color-primary;
+      line-height: 1.1;
+
+      @include respond-to('md') {
+        font-size: 4rem;
+      }
+    }
+
+    &__description {
+      font-size: 1.125rem;
+      line-height: 1.6;
+      color: color.mix($color-text, $color-bg, 70%);
+
+      @include respond-to('md') {
+        font-size: 1.25rem;
+      }
+    }
+
+    &__actions {
+      margin-top: 1rem;
+    }
+  }
+</style>

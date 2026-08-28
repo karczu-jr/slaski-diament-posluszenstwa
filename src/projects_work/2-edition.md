@@ -1,12 +1,13 @@
 ---
-title: PromptSmith
-description: An AI prompt management tool for developers and creators using OpenAI APIs, with support for versioning, tags, and export to JSON.
+title: II edycja
+date: 2026-10-11
+location: Gliwice
+description: "Zawody dla klas 0-3"
 liveUrl: https://example.com
 githubUrl: https://github.com
-image: {
-url: "/promptsmith.webp",
-alt:  "Promptsmith thumbnail"
-}
+image:
+  url: "../../assets/img/promptsmith.webp"
+  alt: "Promptsmith thumbnail"
 ---
 
 ## Overview

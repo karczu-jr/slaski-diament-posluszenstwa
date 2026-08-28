@@ -1,0 +1,71 @@
+---
+// src/components/Marquee.astro
+interface Props {
+  text: string;
+  repeatCount?: number;
+  speedSeconds?: number;
+}
+
+const { text, repeatCount = 10, speedSeconds = 75 } = Astro.props;
+const marqueeItems = Array.from({ length: repeatCount });
+---
+
+<div class="marquee-wrapper" aria-hidden="true">
+  <div class="marquee" style={`--marquee-speed: ${speedSeconds}s`}>
+    <div class="marquee__group">
+      {
+        marqueeItems.map(() => (
+          <span class="marquee-text">{text}</span>
+        ))
+      }
+    </div>
+    <div class="marquee__group">
+      {
+        marqueeItems.map(() => (
+          <span class="marquee-text">{text}</span>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+
+  .marquee-wrapper {
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 3rem;
+    user-select: none;
+  }
+
+  .marquee {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll var(--marquee-speed, 75s) linear infinite;
+
+    // A11y (WCAG 2.2): Respektowanie ustawień użytkownika odnośnie ograniczenia ruchu
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+
+    &:hover {
+      animation-play-state: paused;
+    }
+
+    &__group {
+      display: flex;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+  }
+
+  @keyframes marquee-scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+</style>

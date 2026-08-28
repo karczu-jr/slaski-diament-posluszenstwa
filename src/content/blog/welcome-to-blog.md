@@ -1,7 +1,8 @@
 ---
 title: "Welcome to the Blog"
 description: "An example introductory post to demonstrate typical blog content."
-date: "2025-02-25"
+time: "21:00"
+date: "2025-02-27"
 tags:
   - Intro
   - Demo

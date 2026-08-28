@@ -1,51 +1,56 @@
 ---
+// src/components/Posts.astro
 import Card from "./Card.astro";
-
+import Marquee from "./Marquee.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 
 const allPosts: CollectionEntry<"blog">[] = (await getCollection("blog"))
   .filter((post) => !post.data.draft)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .sort((a, b) => {
+    const dateA = a.data.date ? new Date(a.data.date).valueOf() : 0;
+    const dateB = b.data.date ? new Date(b.data.date).valueOf() : 0;
+    return dateB - dateA;
+  })
   .slice(0, 3);
 ---
 
-<section id="Projects" class="container mx-auto px-6 mt-18">
-  <div class="overflow-hidden mb-12">
-    <div class="flex animate-scroll">
-      <div class="flex shrink-0 whitespace-nowrap">
-        {
-          Array.from({ length: 10 }).map((_) => (
-            <h2 class="heading text-5xl md:text-9xl uppercase mr-4 md:mr-8 -mb-2">
-              Posts
-            </h2>
-          ))
-        }
-      </div>
-      <div class="flex shrink-0 whitespace-nowrap" aria-hidden="true">
-        {
-          Array.from({ length: 10 }).map((_) => (
-            <h2 class="heading text-5xl md:text-9xl uppercase mr-4 md:mr-8 -mb-2">
-              Posts
-            </h2>
-          ))
-        }
-      </div>
-    </div>
+<section id="posts" class="posts" aria-labelledby="posts-title">
+  <!-- Pasek animowanego napisu (Marquee) -->
+  <Marquee text="Newsy" />
+
+  <!-- Dostępny nagłówek dla czytników ekranowych -->
+  <h2 id="posts-title" class="sr-only">Aktualne Newsy</h2>
+
+  <!-- Lista artykułów blogowych -->
+  <div class="posts__list">
+    {allPosts.map((post) => <Card entry={post} />)}
   </div>
-  {allPosts.map((post) => <Card entry={post} />)}
 </section>
 
-<style>
-  @keyframes scroll {
+<style lang="scss">
+  @use '../styles/variables' as *;
+  @use '../styles/mixins' as *;
+  @use '../styles/typography' as *;
+
+  .posts {
+    padding-top: 4.5rem;
+    padding-bottom: 2rem;
+    
+    // Grid / Lista wpisów
+    &__list {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+  }
+
+  // Animacja ciągłego przewijania
+  @keyframes marquee-scroll {
     0% {
       transform: translateX(0);
     }
     100% {
       transform: translateX(-50%);
     }
-  }
-
-  .animate-scroll {
-    animation: scroll 15s linear infinite;
   }
 </style>

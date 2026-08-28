@@ -1,0 +1,160 @@
+---
+// src/components/Partners.astro
+import { Image } from "astro:assets";
+
+export interface Partner {
+  name: string;
+  logo: ImageMetadata;
+  url?: string | null;
+  alt?: string;
+}
+
+interface Props {
+  title?: string;
+  partners: Partner[];
+  class?: string;
+}
+
+const { title = "🤝 Partnerzy i Sponsorzy", partners = [], class: className = "" } = Astro.props;
+---
+
+{
+  partners && partners.length > 0 && (
+    <section class:list={["partners", className]} aria-labelledby="partners-heading">
+      <div class="partners__container">
+        {title && <h2 id="partners-heading" class="partners__title">{title}</h2>}
+
+        <div class="partners__grid">
+          {partners.map((partner) => {
+            const imageAlt = partner.alt || `Logo partnera ${partner.name}`;
+
+            return partner.url ? (
+              <a
+                href={partner.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="partners__link"
+                aria-label={`Odwiedź stronę partnera ${partner.name}`}
+              >
+                <Image
+                  src={partner.logo}
+                  alt={imageAlt}
+                  class="partners__logo"
+                  loading="lazy"
+                />
+              </a>
+            ) : (
+              <div class="partners__item">
+                <Image
+                  src={partner.logo}
+                  alt={imageAlt}
+                  class="partners__logo"
+                  loading="lazy"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  .partners {
+    max-width: 1280px;
+    // padding: 3rem 1.5rem;
+
+    &__container {
+      max-width: 52rem;
+      margin: 0 auto;
+    }
+
+    &__title {
+        font-size: 1.75rem;
+        text-transform: none;
+        margin-top: 3rem;
+        margin-bottom: 1.5rem;
+
+    //     font-size: 1.875rem;
+    //   font-weight: 500;
+    //   text-transform: uppercase;
+    //   line-height: 1.2;
+    //   color: $color-primary;
+
+    //   @include respond-to('md') {
+    //     font-size: 3rem;
+    //   }
+
+    //   span {
+    //     font-size: 1.25rem;
+
+    //     @include respond-to('md') {
+    //       font-size: 1.75rem;
+    //     }
+    //   }
+
+    //   font-size: 1.75rem;
+    //   font-weight: 700;
+    //   text-align: center;
+    //   color: $color-primary;
+    //   margin-bottom: 2.5rem;
+    //   text-transform: uppercase;
+
+    //   @include respond-to('md') {
+    //     font-size: 2.25rem;
+    //   }
+    }
+
+    &__grid {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+
+      @include respond-to('md') {
+        gap: 3rem;
+      }
+    }
+
+    &__link,
+    &__item {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      transition: transform $transition-base;
+    }
+
+    &__link {
+      text-decoration: none;
+
+      &:hover {
+        transform: translateY(-4px);
+      }
+
+      &:focus-visible {
+        outline: 3px solid $color-accent;
+        outline-offset: 4px;
+        border-radius: 0.5rem;
+      }
+    }
+
+    &__logo {
+      width: auto;
+      height: auto;
+      width: 172px;
+      max-height: 104px;
+      object-fit: contain;
+
+      @include respond-to('md') {
+        max-width: 240px;
+      }
+    }
+  }
+</style>

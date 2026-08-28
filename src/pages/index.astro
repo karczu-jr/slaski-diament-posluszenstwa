@@ -1,19 +1,84 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import About from "@/components/About.astro";
-import Projects from "@/components/Projects.astro";
-import Posts from "@/components/Posts.astro";
-import Contact from "@/components/Contact.astro";
+// src/pages/index.astro
+import Layout from "../layouts/Layout.astro";
+import Hero from "../components/Hero.astro";
+import About from "../components/About.astro";
+import Posts from "../components/Posts.astro";
+import Projects from "../components/Projects.astro";
+import Partners from "../components/Partners.astro";
+import Contact from "../components/Contact.astro";
 
-import Hero from "@/components/Hero.astro";
+import { SITE } from "../consts";
 
-import { HOME } from "@/consts";
+// Importy obrazów z src/assets/img/
+import logoZkwp from "../assets/img/partners/zkwp.svg";
+import logoSponsor from "../assets/img/partners/ulozpsa_logo.svg";
+
+const partnersList = [
+  {
+    name: "ZKwP Zabrze",
+    logo: logoZkwp,
+    url: "https://zkzabrzenet.pl",
+  },
+  {
+    name: "Sponsor Główny",
+    logo: logoSponsor, // Bez url – wyrenderuje się jako statyczne logo
+  },
+];
 ---
 
-<Layout title={HOME.TITLE} description={HOME.DESCRIPTION}>
-    <Hero />
-    <About />
-    <Projects />
-    <Posts />
-    <Contact />
+<Layout title={SITE.TITLE} description={SITE.DESCRIPTION}>
+  <div class="home-page">
+    <section id="hero" aria-label="Wprowadzenie" class="home-page__section">
+      <Hero />
+    </section>
+
+    <section id="about" aria-label="O nas" class="home-page__section">
+      <About />
+    </section>
+
+    <section id="posts" aria-label="Najnowsze newsy" class="home-page__section">
+      <Posts />
+    </section>
+
+    <section id="projects" aria-label="Zawody i projekty" class="home-page__section">
+      <Projects />
+    </section>
+    
+    <section id="contact" aria-label="Formularz kontaktowy" class="home-page__section">
+      <Contact />
+    </section>
+  </div>
 </Layout>
+
+<style lang="scss">
+  @use '../styles/variables' as *;
+  @use '../styles/mixins' as *;
+
+  .home-page {
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+    padding-top: 5rem; // Odstęp dla stałego nagłówka (Header)
+    padding-bottom: 4rem;
+
+    @include respond-to('md') {
+      gap: 6rem;
+      padding-top: 6rem;
+      padding-bottom: 6rem;
+    }
+
+    @include respond-to('lg') {
+      gap: 8rem;
+    }
+
+    &__section {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+      scroll-margin-top: 6rem; // Płynne przewijanie do sekcji z uwzględnieniem nagłówka
+    }
+  }
+</style>
