@@ -2,6 +2,7 @@
 // src/components/Footer.astro
 import { SITE, SOCIALS } from "../consts";
 import { getCollection, type CollectionEntry } from "astro:content";
+import Logo from "./Logo.astro";
 
 const projects: CollectionEntry<"projects">[] = (
   await getCollection("projects")
@@ -13,7 +14,7 @@ const currentYear = new Date().getFullYear();
 <footer class="footer">
   <div class="footer__container">
     <div class="footer__hero">
-      <h2 class="footer__title">{SITE.TITLE}</h2>
+      <h2 class="footer__title"><Logo variant="compact" size="clamp(1.4rem, 4.5vw, 2.25rem)" inverted /></h2>
       <blockquote class="footer__quote">
         <p>Z miłości do Obedience ♥️</p>
       </blockquote>
@@ -120,15 +121,10 @@ const currentYear = new Date().getFullYear();
       }
     }
 
+    // Logotyp w jasnej wersji (rozmiar ustawia komponent Logo)
     &__title {
-      font-size: 3rem;
-      font-weight: 800;
-      text-transform: uppercase;
+      margin: 0;
       line-height: 1;
-
-      @include respond-to('lg') {
-        font-size: 6rem;
-      }
     }
 
     &__quote {

@@ -1,63 +1,120 @@
 ---
 // src/pages/blog/[...id].astro
+// Strona pojedynczego newsa: nagłówek, szeroki baner 21:9, treść MDX, galeria i "Czytaj także".
+import ProseImage from "../../components/ProseImage.astro";
 import Layout from "../../layouts/Layout.astro";
 import { getCollection, render, type CollectionEntry } from "astro:content";
-import FormattedDate from "../../components/FormattedDate.astro";
+import { Image } from "astro:assets";
 import BackButton from "../../components/BackButton.astro";
+import Gallery from "../../components/Gallery.astro";
+import NewsCard from "../../components/NewsCard.astro";
+import ButtonSecondary from "../../components/ButtonSecondary.astro";
 
 export async function getStaticPaths() {
   const posts = (await getCollection("blog"))
     .filter((post) => !post.data.draft)
-    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+    .sort((a, b) => (b.data.date?.valueOf() ?? 0) - (a.data.date?.valueOf() ?? 0));
+
   return posts.map((post) => ({
     params: { id: post.id },
-    props: post,
+    props: {
+      post,
+      // Do sekcji "Czytaj także": 3 najnowsze wpisy poza bieżącym
+      related: posts.filter((p) => p.id !== post.id).slice(0, 3),
+    },
   }));
 }
 
-type Props = CollectionEntry<"blog">;
+interface Props {
+  post: CollectionEntry<"blog">;
+  related: CollectionEntry<"blog">[];
+}
 
-const post = Astro.props;
+const { post, related } = Astro.props;
 const { Content } = await render(post);
-const imageUrl = post.data.image?.url;
-const imageAlt = post.data.image?.alt || post.data.title;
+const { title, description, date, time, tags, image, gallery } = post.data;
+
+const formattedDate = date
+  ? date.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })
+  : null;
+
+// Szacowany czas czytania (~200 słów na minutę)
+const words = (post.body ?? "").split(/\s+/).filter(Boolean).length;
+const readingMinutes = Math.max(1, Math.round(words / 200));
 ---
 
-<Layout title={post.data.title} description={post.data.description}>
-  <div class="post-details">
-    <div class="post-details__header-actions">
+<Layout title={title} description={description}>
+  <div class="news-article">
+    <div class="news-article__back">
       <BackButton fallbackHref="/blog" />
     </div>
 
-    <header class="post-details__header">
-      <div class="post-details__header-info">
-        <h1 class="post-details__title">
-          {post.data.title}
-        </h1>
-        <p class="post-details__description">{post.data.description}</p>
-        <p class="post-details__date">
-          <FormattedDate date={post.data.date} />
-        </p>
-      </div>
+    <header class="news-article__header">
+      <p class="news-article__meta">
+        {tags?.map((tag) => <span class="news-article__tag">{tag}</span>)}
+        {
+          formattedDate && (
+            <time datetime={date?.toISOString()}>
+              {formattedDate}
+              {time && `, ${time}`}
+            </time>
+          )
+        }
+        <span aria-hidden="true">·</span>
+        <span>{readingMinutes} min czytania</span>
+      </p>
+
+      <h1 class="news-article__title">{title}</h1>
+
+      {description && <p class="news-article__lead">{description}</p>}
     </header>
 
     {
-      imageUrl && (
-        <div class="post-details__image-wrapper">
-          <img
-            src={imageUrl}
-            alt={imageAlt}
-            class="post-details__image"
+      image?.url && (
+        <div class="news-article__cover">
+          <Image
+            src={image.url}
+            alt={image.alt || title}
+            widths={[640, 1024, 1600, 2000]}
+            sizes="(min-width: 1280px) 1232px, 100vw"
+            class="news-article__cover-image"
             loading="eager"
-            decoding="async"
           />
         </div>
       )
     }
 
-    <article class="post-details__content">
-      <Content />
+    <article class="news-article__content">
+      <Content components={{ img: ProseImage }} />
     </article>
+
+    {
+      gallery && gallery.length > 0 && (
+        <div class="news-article__gallery">
+          <Gallery images={gallery} fallbackAlt={`Zdjęcie – ${title}`} />
+        </div>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="news-article__related" aria-labelledby="related-heading">
+          <div class="news-article__related-header">
+            <h2 id="related-heading" class="news-article__related-title">
+              Czytaj także
+            </h2>
+            <ButtonSecondary href="/blog" text="Wszystkie newsy" />
+          </div>
+          <ul class="news-article__related-grid" role="list">
+            {related.map((item) => (
+              <li class="news-article__related-item">
+                <NewsCard entry={item} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
   </div>
 </Layout>
 
@@ -65,99 +122,152 @@ const imageAlt = post.data.image?.alt || post.data.title;
   @use "sass:color";
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
-  @use "../../styles/typography" as *;
+  @use "../../styles/prose" as *;
 
-  .post-details {
+  $dashed: 1px dashed color.mix($color-text, $color-bg, 30%);
+
+  .news-article {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 4.5rem 1.5rem 4.5rem;
+    padding: 4.5rem 1.5rem;
 
-    &__header-actions {
-      margin-top: 1.5rem;
-      margin-bottom: 1.5rem;
+    &__back {
+      margin: 1.5rem 0;
     }
 
+    // ---------- Nagłówek ----------
     &__header {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px dashed color.mix($color-text, $color-bg, 30%);
-
-      @include respond-to('md') {
-        flex-direction: row;
-        align-items: center;
-      }
+      max-width: 52rem;
+      margin: 0 auto 2rem;
     }
 
-    &__header-info {
+    &__meta {
       display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      max-width: 36rem;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 0.75rem;
+      margin: 0 0 1.25rem;
+      font-size: 0.9rem;
+      color: color.mix($color-text, $color-bg, 75%);
+    }
+
+    &__tag {
+      padding: 0.2rem 0.65rem;
+      font-family: $font-family-heading;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: $color-accent;
+      background: color.mix($color-accent, $color-bg, 10%);
+      border-radius: 999px;
     }
 
     &__title {
-      font-size: 1.875rem;
-      // font-weight: 800;
-      text-transform: uppercase;
-      line-height: 1.2;
-      color: $color-primary;
+      margin: 0 0 1.25rem;
+      font-size: 2rem;
+      line-height: 1.15;
+      text-transform: none;
 
-      @include respond-to('md') {
+      @include respond-to("md") {
         font-size: 3rem;
       }
     }
 
-    &__description {
-      font-size: 1.125rem;
+    &__lead {
+      margin: 0;
+      font-size: 1.2rem;
       line-height: 1.6;
       color: $color-text;
-    }
 
-    &__date {
-      color: color.mix($color-text, $color-bg, 70%);
-      font-weight: 500;
-    }
-
-    &__image-wrapper {
-      width: 100%;
-      aspect-ratio: 610 / 400;
-      border-radius: 1rem;
-      overflow: hidden;
-      margin-top: 2rem;
-      margin-bottom: 2rem;
-
-      @include respond-to('lg') {
-        height: 70vh;
-        aspect-ratio: auto;
+      @include respond-to("md") {
+        font-size: 1.35rem;
       }
     }
 
-    &__image {
+    // ---------- Baner (szeroki, ale niski – jak w edycjach zawodów) ----------
+    &__cover {
       width: 100%;
-      height: 100%;
-      object-fit: contain;
+      aspect-ratio: 3 / 2;
+      margin: 0 0 3rem;
+      overflow: hidden;
+      border-radius: 1rem;
+      background: color.mix($color-text, $color-bg, 6%);
+
+      @include respond-to("md") {
+        aspect-ratio: 21 / 9;
+      }
     }
 
+    &__cover-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    // ---------- Treść ----------
     &__content {
-      max-width: 48rem;
-      margin: 0 auto 4.5rem;
-      padding: 0 0.75rem;
+      max-width: 52rem;
+      margin: 0 auto;
       font-size: 1.125rem;
       line-height: 1.7;
       color: $color-text;
 
-      // Stylizowanie treści generowanej z plików Markdown (MDX)
-      :global(h2) {
-        font-size: 2rem;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
+      @include prose;
+    }
+
+    &__gallery {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: $dashed;
+    }
+
+    // ---------- Czytaj także ----------
+    &__related {
+      margin-top: 4.5rem;
+      padding-top: 3rem;
+      border-top: $dashed;
+    }
+
+    &__related-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    &__related-title {
+      margin: 0;
+      font-size: 1.75rem;
+      text-transform: none;
+    }
+
+    &__related-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      @include respond-to("sm") {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      :global(p) {
-        margin-bottom: 1.25rem;
+      @include respond-to("lg") {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 2rem;
+      }
+    }
+
+    &__related-item {
+      margin: 0;
+      padding: 0;
+
+      &::before {
+        content: none;
       }
     }
   }

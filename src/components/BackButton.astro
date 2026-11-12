@@ -42,6 +42,10 @@ const { fallbackHref = "/blog", class: className = "" } = Astro.props;
 
     &:hover {
       color: $color-accent;
+
+      .back-button__icon {
+        transform: translateX(-4px);
+      }
     }
 
     &:focus-visible {
@@ -51,8 +55,21 @@ const { fallbackHref = "/blog", class: className = "" } = Astro.props;
     }
 
     &__icon {
+      display: inline-block;
       font-size: 1.25em;
       line-height: 1;
+      transition: transform $transition-base;
+    }
+
+    // Lustrzane odbicie animacji z ForwardButton: 👈 przesuwa się w lewo
+    @media (prefers-reduced-motion: reduce) {
+      &__icon {
+        transition: none;
+      }
+
+      &:hover .back-button__icon {
+        transform: none;
+      }
     }
   }
 </style>

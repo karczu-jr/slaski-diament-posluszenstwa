@@ -1,4 +1,3 @@
-import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, fontProviders } from "astro/config";
 
 import { SITE } from "./src/consts";
@@ -9,9 +8,9 @@ import mdx from "@astrojs/mdx";
 // https://astro.build/config
 export default defineConfig({
   site: SITE.URL,
+  // base: "/slaski-diament-posluszenstwa/",
   vite: {
     root: process.cwd(),
-    plugins: [tailwindcss()],
   },
   fonts: [
     {

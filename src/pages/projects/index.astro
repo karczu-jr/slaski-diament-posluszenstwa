@@ -1,30 +1,49 @@
 ---
 // src/pages/projects/index.astro
+// Lista wszystkich edycji zawodów – duże karty w naprzemiennym układzie.
 import Layout from "../../layouts/Layout.astro";
-import Card from "../../components/Card.astro";
+import EventCard from "../../components/EventCard.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { PROJECTS } from "../../consts";
 
 const allProjects: CollectionEntry<"projects">[] = (await getCollection("projects")).sort(
   (a, b) => (b.data.date?.valueOf() || 0) - (a.data.date?.valueOf() || 0)
 );
+
+const countLabel = (n: number) => {
+  if (n === 1) return "1 edycja";
+  const last = n % 10;
+  const lastTwo = n % 100;
+  const few = last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14);
+  return `${n} ${few ? "edycje" : "edycji"}`;
+};
 ---
 
 <Layout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>
-  <section id="projects" class="projects-page" aria-labelledby="projects-heading">
-    <h1 id="projects-heading" class="projects-page__title">
-      Zawody
-    </h1>
+  <section class="events-page" aria-labelledby="events-heading">
+    <header class="events-page__header">
+      <div class="events-page__heading">
+        <h1 id="events-heading" class="events-page__title">Zawody</h1>
+        <span class="events-page__count">{countLabel(allProjects.length)}</span>
+      </div>
+      <p class="events-page__lead">
+        Wszystkie edycje Śląskiego Diamentu Posłuszeństwa – terminy, miejsca, zapisy i wyniki.
+      </p>
+    </header>
 
-    <ul class="projects-page__list" role="list">
-      {
-        allProjects.map((project) => (
-          <li class="projects-page__item">
-            <Card entry={project} />
-          </li>
-        ))
-      }
-    </ul>
+    {
+      allProjects.length > 0 ? (
+        <ul class="events-page__list" role="list">
+          {allProjects.map((project, index) => (
+            <li class="events-page__item">
+              <EventCard entry={project} eager={index === 0} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="events-page__empty">Wkrótce ogłosimy pierwszą edycję zawodów.</p>
+      )
+    }
   </section>
 </Layout>
 
@@ -32,41 +51,91 @@ const allProjects: CollectionEntry<"projects">[] = (await getCollection("project
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
 
-  .projects-page {
+  .events-page {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 4.5rem 1.5rem;
+    padding: 6.5rem 1.5rem 4.5rem;
+
+    &__header {
+      max-width: 48rem;
+      margin-bottom: 2.5rem;
+
+      @include respond-to("md") {
+        margin-bottom: 3.5rem;
+      }
+    }
+
+    // Nagłówek z licznikiem wpisów obok, wyrównanym do linii bazowej tytułu
+    &__heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.25rem 1rem;
+      margin-bottom: 1rem;
+    }
 
     &__title {
+      margin: 0;
       font-size: 3rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      color: $color-primary;
-      margin-top: 2rem;
-      margin-bottom: 2rem;
       line-height: 1;
 
-      @include respond-to('md') {
-        font-size: 6rem;
+      @include respond-to("md") {
+        font-size: 5rem;
       }
 
-      @include respond-to('lg') {
-        font-size: 8rem;
+      @include respond-to("lg") {
+        font-size: 6.5rem;
+      }
+    }
+
+    &__count {
+      font-family: $font-family-heading;
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      color: $color-accent;
+
+      @include respond-to("md") {
+        font-size: 1.1rem;
+      }
+    }
+
+    &__lead {
+      margin: 0;
+      font-size: 1.125rem;
+      line-height: 1.6;
+      color: $color-text;
+
+      @include respond-to("md") {
+        font-size: 1.25rem;
       }
     }
 
     &__list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 1.5rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      @include respond-to("md") {
+        gap: 2rem;
+      }
     }
 
     &__item {
       margin: 0;
       padding: 0;
+
+      &::before {
+        content: none;
+      }
+    }
+
+    &__empty {
+      color: $color-text;
     }
   }
 </style>

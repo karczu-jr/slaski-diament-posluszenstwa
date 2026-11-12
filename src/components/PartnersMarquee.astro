@@ -1,0 +1,276 @@
+---
+// src/components/PartnersMarquee.astro
+// Przewijany pasek z logo partnerów (styl "logo cloud").
+// - logo w odcieniach szarości, po najechaniu wracają do koloru
+// - każde logo ma podobną "wagę" wizualną niezależnie od proporcji (normalizacja po polu powierzchni)
+// - płynne wygaszenie na krawędziach, pauza po najechaniu / fokusie
+// - przy prefers-reduced-motion pasek zamienia się w statyczny, wyśrodkowany rząd
+import { Image } from "astro:assets";
+import type { Partner } from "./Partners.astro";
+
+interface Props {
+  title?: string;
+  caption?: string;
+  partners: Partner[];
+  /** Czas jednego pełnego przejazdu paska w sekundach */
+  speedSeconds?: number;
+  /** Docelowe pole powierzchni logo w px² – im większe, tym większe logo */
+  logoArea?: number;
+  /** Etykieta dla czytników ekranu, gdy pasek nie ma własnego tytułu (title="") */
+  ariaLabel?: string;
+  class?: string;
+}
+
+const {
+  title = "🤝 Partnerzy i Sponsorzy",
+  caption = "Dziękujemy wszystkim, którzy wspierają Śląski Diament Posłuszeństwa",
+  partners = [],
+  speedSeconds = 40,
+  logoArea = 88 * 88, // kwadratowe logo = 88 × 88 px, reszta dopasowana do tej samej powierzchni
+  ariaLabel = "Logo partnerów",
+  class: className = "",
+} = Astro.props;
+
+const MAX_HEIGHT = 88;
+const MAX_WIDTH = 210;
+
+// Liczymy wymiary tak, żeby logo kwadratowe i panoramiczne wyglądały na równie "ciężkie".
+const sized = partners.map((partner) => {
+  const ratio = partner.logo.width / partner.logo.height || 1;
+  let height = Math.sqrt(logoArea / ratio);
+  let width = height * ratio;
+
+  if (height > MAX_HEIGHT) {
+    height = MAX_HEIGHT;
+    width = height * ratio;
+  }
+  if (width > MAX_WIDTH) {
+    width = MAX_WIDTH;
+    height = width / ratio;
+  }
+
+  return { ...partner, width: Math.round(width), height: Math.round(height) };
+});
+
+// Pasek musi być szerszy niż ekran, żeby pętla była płynna – przy małej liczbie partnerów powtarzamy listę.
+const repeat = sized.length > 0 ? Math.max(1, Math.ceil(10 / sized.length)) : 0;
+const track = Array.from({ length: repeat }, () => sized).flat();
+---
+
+{
+  sized.length > 0 && (
+    <section
+      class:list={["partners-marquee", className]}
+      aria-labelledby={title ? "partners-marquee-heading" : undefined}
+      aria-label={title ? undefined : ariaLabel}
+    >
+      {(title || caption) && (
+        <header class="partners-marquee__header">
+          {title && (
+            <h2 id="partners-marquee-heading" class="partners-marquee__title">
+              {title}
+            </h2>
+          )}
+          {caption && <p class="partners-marquee__caption">{caption}</p>}
+        </header>
+      )}
+
+      <div class="partners-marquee__viewport" style={`--marquee-speed: ${speedSeconds}s`}>
+        <div class="partners-marquee__track">
+          {[0, 1].map((copy) => (
+            <ul class="partners-marquee__group" aria-hidden={copy === 1 ? "true" : undefined}>
+              {track.map((partner, index) => {
+                // Tylko pierwsze wystąpienie jest dostępne dla czytników ekranu i klawiatury
+                const isDuplicate = copy === 1 || index >= sized.length;
+                const alt = isDuplicate ? "" : partner.alt || `Logo partnera ${partner.name}`;
+                const logo = (
+                  <Image
+                    src={partner.logo}
+                    alt={alt}
+                    width={partner.width * 2}
+                    height={partner.height * 2}
+                    class="partners-marquee__logo"
+                    style={`width: ${partner.width}px; height: ${partner.height}px;`}
+                    loading="lazy"
+                  />
+                );
+
+                return (
+                  <li class="partners-marquee__item" aria-hidden={isDuplicate && copy === 0 ? "true" : undefined}>
+                    {partner.url ? (
+                      <a
+                        href={partner.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="partners-marquee__link"
+                        tabindex={isDuplicate ? -1 : undefined}
+                        aria-label={isDuplicate ? undefined : `${partner.name} (otwiera się w nowej karcie)`}
+                        title={partner.name}
+                      >
+                        {logo}
+                      </a>
+                    ) : (
+                      <span class="partners-marquee__link" title={partner.name}>
+                        {logo}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  .partners-marquee {
+    --logo-gap: 3rem;
+    --fade: 12%;
+
+    margin-top: 3rem;
+
+    @include respond-to("md") {
+      --logo-gap: 4.5rem;
+    }
+
+    // Nagłówek wyrównany z treścią artykułu (52rem), a pasek z logo na pełną szerokość
+    &__header {
+      max-width: 52rem;
+      margin: 0 auto 2rem;
+    }
+
+    &__title {
+      font-size: 1.75rem;
+      text-transform: none;
+      margin-bottom: 0.5rem;
+    }
+
+    &__caption {
+      margin: 0;
+      font-size: 0.95rem;
+      color: $color-text;
+      opacity: 0.8;
+    }
+
+    &__viewport {
+      position: relative;
+      overflow: hidden;
+      padding-block: 1.25rem;
+      // Wygaszenie logo przy krawędziach – działa na każdym tle (również na kropkowanym)
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--fade),
+        #000 calc(100% - var(--fade)),
+        transparent
+      );
+
+      &:hover .partners-marquee__track,
+      &:focus-within .partners-marquee__track {
+        animation-play-state: paused;
+      }
+    }
+
+    &__track {
+      display: flex;
+      width: max-content;
+      animation: partners-marquee-scroll var(--marquee-speed, 40s) linear infinite;
+    }
+
+    &__group {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      gap: var(--logo-gap);
+      padding: 0 var(--logo-gap) 0 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    &__item {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+
+      &::before {
+        content: none;
+      }
+    }
+
+    &__link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: $radius-md;
+      text-decoration: none;
+
+      &:focus-visible {
+        outline: 3px solid $color-accent;
+        outline-offset: 6px;
+      }
+    }
+
+    &__logo {
+      display: block;
+      max-width: none;
+      object-fit: contain;
+      filter: grayscale(1);
+      opacity: 0.55;
+      transition:
+        filter $transition-base,
+        opacity $transition-base,
+        transform $transition-base;
+    }
+
+    &__link:hover &__logo,
+    &__link:focus-visible &__logo {
+      filter: grayscale(0);
+      opacity: 1;
+      transform: scale(1.06);
+    }
+
+    // A11y (WCAG 2.2): bez ruchu – statyczny, zawijany rząd logo
+    @media (prefers-reduced-motion: reduce) {
+      &__viewport {
+        mask-image: none;
+      }
+
+      &__track {
+        animation: none;
+        width: auto;
+        justify-content: center;
+      }
+
+      &__group {
+        flex-wrap: wrap;
+        justify-content: center;
+        row-gap: 2rem;
+        padding-right: 0;
+
+        &[aria-hidden="true"] {
+          display: none;
+        }
+      }
+
+      &__item[aria-hidden="true"] {
+        display: none;
+      }
+    }
+  }
+
+  @keyframes partners-marquee-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+</style>

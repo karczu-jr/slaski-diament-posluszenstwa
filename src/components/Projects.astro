@@ -1,6 +1,6 @@
 ---
 // src/components/Projects.astro
-import Card from "./Card.astro";
+import EventCard from "./EventCard.astro";
 import Marquee from "./Marquee.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 
@@ -20,7 +20,7 @@ const allProjects: CollectionEntry<"projects">[] = (
 
   <!-- Lista projektów/zawodów -->
   <div class="projects__list">
-    {allProjects.map((project) => <Card entry={project} />)}
+    {allProjects.map((project) => <EventCard entry={project} />)}
   </div>
 </section>
 
@@ -36,17 +36,11 @@ const allProjects: CollectionEntry<"projects">[] = (
     &__list {
       display: flex;
       flex-direction: column;
-      gap: 2rem;
-    }
-  }
+      gap: 1.5rem;
 
-  // Animacja ciągłego przewijania
-  @keyframes marquee-scroll {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
+      @include respond-to("md") {
+        gap: 2rem;
+      }
     }
   }
 </style>

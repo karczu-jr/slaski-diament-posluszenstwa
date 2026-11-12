@@ -1,0 +1,37 @@
+---
+// src/components/ProseImage.astro
+// Zamiennik domyślnego <img> dla obrazów wstawionych w treść .mdx (![opis](ścieżka)).
+// Bez niego Astro podaje obraz w oryginalnej rozdzielczości (np. 4926 px / 2 MB);
+// tu generujemy kilka szerokości WebP, a przeglądarka wybiera najmniejszą wystarczającą.
+// Kolumna treści ma max 52rem (832px) – szerokości pokrywają ekrany 1x, 1.5x i 2x.
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+
+type Props = {
+  src: ImageMetadata | string;
+  alt?: string;
+  title?: string;
+};
+
+const { src, alt = "", title } = Astro.props;
+const WIDTHS = [480, 832, 1248, 1664];
+---
+
+{
+  typeof src === "string" ? (
+    // obraz zewnętrzny (URL) – bez optymalizacji
+    <img src={src} alt={alt} title={title} loading="lazy" decoding="async" />
+  ) : (
+    <Image
+      src={src}
+      alt={alt}
+      title={title}
+      width={Math.min(src.width, 832)}
+      widths={WIDTHS.filter((w) => w <= src.width)}
+      sizes="(min-width: 56rem) 52rem, 100vw"
+      format="webp"
+      quality={82}
+      loading="lazy"
+    />
+  )
+}

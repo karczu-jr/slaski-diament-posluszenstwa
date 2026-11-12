@@ -3,6 +3,8 @@
 import { Image } from 'astro:assets';
 import portraitImg from '../assets/img/portrait.webp';
 import Tag from './Tag.astro';
+import PartnersMarquee from './PartnersMarquee.astro';
+import { sponsors } from '../data/sponsors';
 
 const highlights = [
   { text: 'Organizacja', icon: '🏆' },
@@ -53,6 +55,12 @@ const highlights = [
         </ul>
       </div>
     </div>
+  </div>
+
+  <!-- Stali sponsorzy (lista: src/data/sponsors.ts) – ta sama pozycja na stronie głównej i w "O nas" -->
+  <div class="about__sponsors">
+    <h3 class="about__sponsors-title">Sponsorzy</h3>
+    <PartnersMarquee partners={sponsors} title="" caption="" ariaLabel="Logo sponsorów" />
   </div>
 </section>
 
@@ -126,6 +134,26 @@ const highlights = [
       text-transform: uppercase;
       color: $color-text;
       margin-bottom: 1.5rem;
+    }
+
+    &__sponsors {
+      margin-top: 4rem;
+
+      @include respond-to('md') {
+        margin-top: 6rem;
+      }
+    }
+
+    // 5rem od tabletu wzwyż; na telefonie mniej, żeby słowo mieściło się w jednej linii
+    &__sponsors-title {
+      margin: 0 0 2rem;
+      font-size: 3rem;
+      line-height: 1;
+
+      @include respond-to('md') {
+        font-size: 5rem;
+        margin-bottom: 2.5rem;
+      }
     }
 
     &__tags-list {

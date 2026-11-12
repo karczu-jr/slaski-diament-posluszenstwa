@@ -4,7 +4,7 @@ import { glob } from "astro/loaders";
 
 const blog = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
-  schema: z.object({
+  schema: ({ image }) => z.object({
     title: z.string(),
     description: z.string().optional(),
     date: z.coerce.date().optional(), // Data publikacji (wymagana)
@@ -12,11 +12,21 @@ const blog = defineCollection({
     draft: z.boolean().optional(),
     tags: z.array(z.string()).optional(),
     series: z.string().optional(),
+    // Zdjęcie główne newsa – lokalny plik, optymalizowany przez Astro (tak jak w edycjach zawodów)
     image: z
       .object({
-        url: z.string(),
+        url: image(),
         alt: z.string().optional(),
       })
+      .optional(),
+    // Opcjonalna galeria (np. posty z Facebooka z kilkoma zdjęciami)
+    gallery: z
+      .array(
+        z.object({
+          url: image(),
+          alt: z.string().optional(),
+        })
+      )
       .optional(),
   }),
 });

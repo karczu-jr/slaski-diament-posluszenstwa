@@ -1,0 +1,92 @@
+// src/styles/_prose.scss
+// Wspólne style treści z plików MDX (edycje zawodów, newsy).
+// Użycie wewnątrz kontenera treści:  @include prose;
+@use "variables" as *;
+
+@mixin prose {
+  // WYŁĄCZENIE SCOPED CSS DLA CAŁEJ ZAWARTOŚCI Z MDX
+  // Zapis :global(img) wewnątrz .project-details__content generuje w CSS selektor:
+  // .project-details__content[data-astro-cid-omsmup2h] img { ... }
+  // bez nakładania atrybutu na sam obrazek!
+  :global(img) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 450px;
+    object-fit: cover;
+    border-radius: 1rem;
+    margin: 0 auto;
+  }
+
+  :global(p:has(img)) {
+    margin: 2rem 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  :global(h2) {
+    font-size: 1.75rem;
+    text-transform: none;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+  }
+
+  :global(ul) {
+    list-style-type: square;
+  }
+
+  :global(h3) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  :global(p) {
+    margin-bottom: 1.25rem;
+    line-height: 180%;
+  }
+
+  :global(strong) {
+    font-weight: 600;
+    color: $color-primary;
+  }
+
+  :global(ul),
+  :global(ol) {
+    margin: 0.25rem 0;
+  }
+
+  :global(ul) {
+    list-style: none;
+  }
+
+  :global(ul li) {
+    position: relative;
+    padding-left: 1.75rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+
+    // Propozycja 1: Ręcznie rysowany diament z borderów (Czysty CSS)
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0.25rem;
+      top: 0.55em; // Wyrównanie do pierwszej linii tekstu
+      width: 0.5rem;
+      height: 0.5rem;
+      background-color: $color-accent;
+      transform: rotate(45deg); // Obrót kwadratu w diament
+      transition: transform $transition-base, background-color $transition-base;
+    }
+  }
+
+  :global(ol li) {
+    position: relative;
+    margin-left: 1.25rem;
+    padding-left: 0.5rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+  }
+}

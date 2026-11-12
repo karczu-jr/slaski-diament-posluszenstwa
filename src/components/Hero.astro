@@ -1,6 +1,6 @@
 ---
 // src/components/Hero.astro
-import { SITE } from "../consts";
+import Logo from "./Logo.astro";
 import ButtonPrimary from "./ButtonPrimary.astro";
 import ButtonSecondary from "./ButtonSecondary.astro";
 ---
@@ -8,7 +8,7 @@ import ButtonSecondary from "./ButtonSecondary.astro";
 <section class="hero" aria-labelledby="hero-title">
   <div class="hero__container">
     <h1 id="hero-title" class="hero__title">
-      {SITE.TITLE}
+      <Logo variant="compact" size="clamp(1.5rem, 7.8vw, 3.25rem)" />
     </h1>
     
     <div class="hero__content">
@@ -63,13 +63,10 @@ import ButtonSecondary from "./ButtonSecondary.astro";
       }
     }
 
+    // Tytuł strony = logotyp (rozmiar ustawia komponent Logo)
     &__title {
-      font-size: clamp(6rem, 20vw, 12.5rem);
-      font-weight: 500;
-      line-height: 0.9;
-      text-transform: uppercase;
-      color: $color-primary;
-      word-break: break-word;
+      margin: 0;
+      line-height: 1;
     }
 
     &__content {

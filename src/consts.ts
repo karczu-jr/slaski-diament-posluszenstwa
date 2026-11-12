@@ -1,31 +1,31 @@
 export const SITE = {
   URL: "https://your_site.com",
-  TITLE: "LOGO",
+  TITLE: "Śląski Diament Posłuszeństwa",
   DESCRIPTION:
-    "A full-stack developer with a strong focus on building fast, accessible, and maintainable web applications.",
+    "Śląski Diament Posłuszeństwa – zawody Obedience na Śląsku. Terminy, zapisy, wyniki i aktualności.",
   EMAIL: "hi@monolume.com",
 };
 
 export const BLOG = {
-  TITLE: "Newsy | Śląski diament posłuszeństwa - zawody Obedience",
+  TITLE: "Newsy",
   DESCRIPTION:
-    "A collection of articles on programming, projects and other stuff",
+    "Aktualności, ogłoszenia i wyniki zawodów Obedience Śląski Diament Posłuszeństwa.",
 };
 
 export const PROJECTS = {
-  TITLE: "Edycje zawodów | Śląski diament posłuszeństwa - zawody Obedience",
+  TITLE: "Zawody",
   DESCRIPTION:
-    "A collection of my projects with links to repositories and live demos.",
+    "Wszystkie edycje zawodów Obedience Śląski Diament Posłuszeństwa – terminy, miejsca, zapisy i wyniki.",
 };
 
 export const ABOUT = {
-  TITLE: "O nas | Śląski diament posłuszeństwa - zawody Obedience",
+  TITLE: "O nas",
   DESCRIPTION:
     "A personal blog about coding, building projects, and figuring things out",
 };
 
 export const CONTACT = {
-  TITLE: "Kontakt | Śląski diament posłuszeństwa - zawody Obedience",
+  TITLE: "Kontakt",
   DESCRIPTION:
     "A personal blog about coding, building projects, and figuring things out",
 };

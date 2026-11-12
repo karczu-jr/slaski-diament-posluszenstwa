@@ -1,17 +1,21 @@
 ---
 // src/components/Posts.astro
-import Card from "./Card.astro";
+// Sekcja newsów na stronie głównej: duża karta z najnowszym wpisem,
+// pod nią jeden rząd mniejszych kart i przycisk do pełnej listy.
+import NewsCard from "./NewsCard.astro";
 import Marquee from "./Marquee.astro";
+import ButtonSecondary from "./ButtonSecondary.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
+
+/** Ile mniejszych kart w rzędzie pod wyróżnionym wpisem */
+const GRID_COUNT = 3;
 
 const allPosts: CollectionEntry<"blog">[] = (await getCollection("blog"))
   .filter((post) => !post.data.draft)
-  .sort((a, b) => {
-    const dateA = a.data.date ? new Date(a.data.date).valueOf() : 0;
-    const dateB = b.data.date ? new Date(b.data.date).valueOf() : 0;
-    return dateB - dateA;
-  })
-  .slice(0, 3);
+  .sort((a, b) => (b.data.date?.valueOf() ?? 0) - (a.data.date?.valueOf() ?? 0));
+
+const [featured, ...rest] = allPosts;
+const gridPosts = rest.slice(0, GRID_COUNT);
 ---
 
 <section id="posts" class="posts" aria-labelledby="posts-title">
@@ -21,36 +25,71 @@ const allPosts: CollectionEntry<"blog">[] = (await getCollection("blog"))
   <!-- Dostępny nagłówek dla czytników ekranowych -->
   <h2 id="posts-title" class="sr-only">Aktualne Newsy</h2>
 
-  <!-- Lista artykułów blogowych -->
-  <div class="posts__list">
-    {allPosts.map((post) => <Card entry={post} />)}
-  </div>
+  {
+    featured ? (
+      <div class="posts__layout">
+        <NewsCard entry={featured} variant="featured" />
+
+        {gridPosts.length > 0 && (
+          <div class="posts__grid">
+            {gridPosts.map((post) => (
+              <NewsCard entry={post} />
+            ))}
+          </div>
+        )}
+
+        <div class="posts__actions">
+          <ButtonSecondary href="/blog" text={`Zobacz wszystkie newsy (${allPosts.length})`} icon="📰" />
+        </div>
+      </div>
+    ) : (
+      <p class="posts__empty">Wkrótce pojawią się tu pierwsze newsy.</p>
+    )
+  }
 </section>
 
 <style lang="scss">
-  @use '../styles/variables' as *;
-  @use '../styles/mixins' as *;
-  @use '../styles/typography' as *;
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
 
   .posts {
     padding-top: 4.5rem;
     padding-bottom: 2rem;
-    
-    // Grid / Lista wpisów
-    &__list {
+
+    &__layout {
       display: flex;
       flex-direction: column;
-      gap: 2rem;
-    }
-  }
+      gap: 1.5rem;
 
-  // Animacja ciągłego przewijania
-  @keyframes marquee-scroll {
-    0% {
-      transform: translateX(0);
+      @include respond-to("md") {
+        gap: 2rem;
+      }
     }
-    100% {
-      transform: translateX(-50%);
+
+    // Jeden rząd: 1 kolumna na telefonie, 3 kolumny od tabletu w górę
+    &__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+
+      @include respond-to("md") {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      @include respond-to("lg") {
+        gap: 2rem;
+      }
+    }
+
+    &__actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    &__empty {
+      text-align: center;
+      color: $color-text;
     }
   }
 </style>

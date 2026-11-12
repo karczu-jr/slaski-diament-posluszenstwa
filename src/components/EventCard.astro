@@ -1,0 +1,406 @@
+---
+// src/components/EventCard.astro
+// Duża karta edycji zawodów – w tym samym stylu co wyróżniony news.
+// Cała karta prowadzi do szczegółów, a przyciski "Zapisz się" / "Facebook" są osobnymi linkami
+// (wzorzec "stretched link" – bez zagnieżdżania <a> w <a>).
+import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
+import ForwardButton from "./ForwardButton.astro";
+
+interface Props {
+  entry: CollectionEntry<"projects">;
+  /** Pierwsza karta na stronie ładuje zdjęcie od razu */
+  eager?: boolean;
+}
+
+const { entry, eager = false } = Astro.props;
+const { title, description, date, location, image, formUrl, facebookUrl } = entry.data;
+
+const href = `/projects/${entry.id}`;
+const titleId = `event-${entry.id}`;
+
+// Status liczony przy buildzie; skrypt niżej poprawia go w przeglądarce, gdyby strona nie była przebudowana
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const isUpcoming = date ? date.valueOf() >= today.valueOf() : false;
+
+const formattedDate = date
+  ? date.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })
+  : null;
+---
+
+<article
+  class:list={["event-card", { "is-upcoming": isUpcoming }]}
+  aria-labelledby={titleId}
+  data-event-date={date?.toISOString()}
+  data-forward-hover
+>
+  <div class="event-card__media">
+    {
+      image?.url ? (
+        <Image
+          src={image.url}
+          alt=""
+          class="event-card__image"
+          widths={[640, 960, 1400]}
+          sizes="(min-width: 768px) 60vw, 100vw"
+          loading={eager ? "eager" : "lazy"}
+        />
+      ) : (
+        <div class="event-card__fallback" aria-hidden="true">◆</div>
+      )
+    }
+    {
+      date && (
+        <span class="event-card__status" data-event-status>
+          {isUpcoming ? "Nadchodzące" : "Zakończone"}
+        </span>
+      )
+    }
+  </div>
+
+  <div class="event-card__body">
+    <p class="event-card__eyebrow">Śląski Diament Posłuszeństwa</p>
+
+    <h3 id={titleId} class="event-card__title">
+      <a href={href} class="event-card__link">{title}</a>
+    </h3>
+
+    {
+      (formattedDate || location) && (
+        <ul class="event-card__facts" role="list">
+          {formattedDate && (
+            <li class="event-card__fact">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+              <time datetime={date?.toISOString()}>{formattedDate}</time>
+            </li>
+          )}
+          {location && (
+            <li class="event-card__fact">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" /><circle cx="12" cy="10" r="2.5" /></svg>
+              <span>{location}</span>
+            </li>
+          )}
+        </ul>
+      )
+    }
+
+    {description && <p class="event-card__description">{description}</p>}
+
+    <div class="event-card__actions">
+      <div class="event-card__more">
+        <ForwardButton />
+      </div>
+
+      {
+        formUrl && (
+          <a href={formUrl} target="_blank" rel="noopener noreferrer" class="event-card__button event-card__button--primary" data-signup>
+            Zapisz się
+          </a>
+        )
+      }
+      {
+        facebookUrl && (
+          <a href={facebookUrl} target="_blank" rel="noopener noreferrer" class="event-card__button">
+            Facebook
+          </a>
+        )
+      }
+    </div>
+  </div>
+</article>
+
+<script>
+  // Aktualizacja statusu "Nadchodzące/Zakończone" w przeglądarce (strona statyczna mogła być zbudowana dawno temu)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  document.querySelectorAll<HTMLElement>("[data-event-date]").forEach((card) => {
+    const iso = card.dataset.eventDate;
+    if (!iso) return;
+    const upcoming = new Date(iso).valueOf() >= today.valueOf();
+    card.classList.toggle("is-upcoming", upcoming);
+    const status = card.querySelector<HTMLElement>("[data-event-status]");
+    if (status) status.textContent = upcoming ? "Nadchodzące" : "Zakończone";
+  });
+</script>
+
+<style lang="scss">
+  @use "sass:color";
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  $border: color.mix($color-text, $color-bg, 20%);
+
+  .event-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: $color-bg;
+    border: 1px dashed $border;
+    border-radius: 1.5rem;
+    transition:
+      transform $transition-base,
+      box-shadow $transition-base,
+      border-color $transition-base;
+
+    @include respond-to("md") {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      border-color: color.mix($color-text, $color-bg, 45%);
+      box-shadow: 0 18px 40px -24px rgba(15, 23, 42, 0.35);
+    }
+
+    &:focus-within {
+      border-color: $color-accent;
+    }
+
+    // ---------- Zdjęcie ----------
+    &__media {
+      position: relative;
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      background: color.mix($color-text, $color-bg, 6%);
+
+      @include respond-to("md") {
+        aspect-ratio: auto;
+        min-height: 24rem;
+      }
+    }
+
+    &__image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 500ms ease;
+    }
+
+    &:hover &__image {
+      transform: scale(1.04);
+    }
+
+    &__fallback {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      font-size: 2.5rem;
+      color: $color-accent;
+      opacity: 0.5;
+    }
+
+    &__status {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      padding: 0.35rem 0.8rem;
+      font-family: $font-family-heading;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: $color-primary;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 999px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    &.is-upcoming &__status {
+      color: $color-bg;
+      background: $color-accent;
+
+      &::before {
+        content: "";
+        display: inline-block;
+        width: 0.45rem;
+        height: 0.45rem;
+        margin-right: 0.45rem;
+        vertical-align: 0.1em;
+        border-radius: 50%;
+        background: currentColor;
+        animation: event-pulse 1.6s ease-in-out infinite;
+      }
+    }
+
+    // ---------- Treść ----------
+    &__body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1rem;
+      padding: 1.5rem;
+
+      @include respond-to("md") {
+        padding: 2.5rem;
+      }
+    }
+
+    &__eyebrow {
+      margin: 0;
+      font-family: $font-family-heading;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: $color-accent;
+    }
+
+    &__title {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.1;
+
+      @include respond-to("lg") {
+        font-size: 2.75rem;
+      }
+    }
+
+    // Link na tytule rozciągnięty na całą kartę
+    &__link {
+      color: inherit;
+      text-decoration: none;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+
+      &:focus-visible {
+        outline: none;
+      }
+    }
+
+    &:has(.event-card__link:focus-visible) {
+      outline: 3px solid $color-accent;
+      outline-offset: 4px;
+    }
+
+    &__facts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 1rem;
+      color: color.mix($color-text, $color-bg, 85%);
+    }
+
+    &__fact {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0;
+
+      &::before {
+        content: none;
+      }
+
+      svg {
+        flex-shrink: 0;
+        color: $color-accent;
+      }
+    }
+
+    &__description {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: color.mix($color-text, $color-bg, 85%);
+
+      @include respond-to("lg") {
+        font-size: 1.15rem;
+      }
+    }
+
+    &__actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    &__more {
+      margin-right: auto;
+    }
+
+    // Przyciski muszą leżeć nad rozciągniętym linkiem
+    &__button {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px; // obszar dotykowy (WCAG 2.2)
+      padding: 0.5rem 1.1rem;
+      font-size: 0.9rem;
+      color: $color-primary;
+      text-decoration: none;
+      border: 1px dashed $color-primary;
+      border-radius: 0.75rem;
+      transition:
+        background-color $transition-base,
+        color $transition-base;
+
+      &:hover {
+        color: $color-bg;
+        background: $color-primary;
+        border-style: solid;
+      }
+
+      &:focus-visible {
+        outline: 3px solid $color-accent;
+        outline-offset: 3px;
+      }
+
+      &--primary {
+        color: $color-bg;
+        background: $color-primary;
+        border-style: solid;
+
+        &:hover {
+          background: $color-accent;
+          border-color: $color-accent;
+        }
+      }
+    }
+
+    // "Zapisz się" tylko dla nadchodzących zawodów
+    &:not(.is-upcoming) [data-signup] {
+      display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &,
+      &__image {
+        transition: none;
+      }
+
+      &:hover {
+        transform: none;
+      }
+
+      &.is-upcoming &__status::before {
+        animation: none;
+      }
+    }
+  }
+
+  @keyframes event-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+</style>

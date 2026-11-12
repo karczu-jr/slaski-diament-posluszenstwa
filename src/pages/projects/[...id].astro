@@ -1,10 +1,12 @@
 ---
 // src/pages/projects/[...id].astro - WERSJA 1: Układ pionowy (Image -> Content -> Gallery)
+import ProseImage from "../../components/ProseImage.astro";
 import Layout from "../../layouts/Layout.astro";
 import BackButton from "../../components/BackButton.astro";
 import ButtonPrimary from "../../components/ButtonPrimary.astro";
 import ButtonSecondary from "../../components/ButtonSecondary.astro";
-import Partners from "@/components/Partners.astro";
+import PartnersMarquee from "@/components/PartnersMarquee.astro";
+import Gallery from "@/components/Gallery.astro";
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
 
@@ -81,34 +83,21 @@ const imageAlt = project.data.image?.alt || project.data.title;
       }
 
       <article class="project-details__content">
-        <Content />
+        <Content components={{ img: ProseImage }} />
       </article>
-      {project.data.partners && <Partners partners={project.data.partners} />}
+      {project.data.partners && <PartnersMarquee partners={project.data.partners} />}
     </div>
 
     
 
     {
       project.data.gallery && project.data.gallery.length > 0 && (
-        <section class="project-details__gallery" aria-labelledby="gallery-heading">
-          <h2 id="gallery-heading" class="project-details__gallery-title">
-            Galeria zdjęć
-          </h2>
-
-          <div class="project-details__gallery-grid">
-            {project.data.gallery.map((img) => (
-              <div class="project-details__gallery-item">
-                <Image
-                  src={img.url}
-                  alt={img.alt || `Zdjęcie w galerii ${project.data.title}`}
-                  inferSize={true}
-                  class="project-details__gallery-image"
-                  loading="lazy"
-                />
-              </div>
-            ))}
-          </div>
-        </section>
+        <div class="project-details__gallery">
+          <Gallery
+            images={project.data.gallery}
+            fallbackAlt={`Zdjęcie z zawodów – ${project.data.title}`}
+          />
+        </div>
       )
     }
   </div>
@@ -118,6 +107,7 @@ const imageAlt = project.data.image?.alt || project.data.title;
   @use "sass:color";
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
+  @use "../../styles/prose" as *;
 
   .project-details {
     max-width: 1280px;
@@ -229,92 +219,7 @@ const imageAlt = project.data.image?.alt || project.data.title;
       line-height: 1.7;
       color: $color-text;
 
-      // WYŁĄCZENIE SCOPED CSS DLA CAŁEJ ZAWARTOŚCI Z MDX
-      // Zapis :global(img) wewnątrz .project-details__content generuje w CSS selektor:
-      // .project-details__content[data-astro-cid-omsmup2h] img { ... }
-      // bez nakładania atrybutu na sam obrazek!
-      :global(img) {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        height: auto;
-        max-height: 450px;
-        object-fit: cover;
-        border-radius: 1rem;
-        margin: 0 auto;
-      }
-
-      :global(p:has(img)) {
-        margin: 2rem 0;
-        display: flex;
-        justify-content: center;
-      }
-
-      :global(h2) {
-        font-size: 1.75rem;
-        text-transform: none;
-        margin-top: 3rem;
-        margin-bottom: 1.5rem;
-      }
-
-      :global(ul) {
-        list-style-type: square;
-      }
-
-      :global(h3) {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-      }
-
-      :global(p) {
-        margin-bottom: 1.25rem;
-        line-height: 180%;
-      }
-
-      :global(strong) {
-        font-weight: 600;
-        color: $color-primary;
-      }
-
-      :global(ul),
-      :global(ol) {
-        margin: 0.25rem 0;
-      }
-
-      :global(ul) {
-        list-style: none;
-      }
-
-      :global(ul li) {
-        position: relative;
-        padding-left: 1.75rem;
-        margin-bottom: 0.75rem;
-        line-height: 1.6;
-
-        // Propozycja 1: Ręcznie rysowany diament z borderów (Czysty CSS)
-        &::before {
-          content: "";
-          position: absolute;
-          left: 0.25rem;
-          top: 0.55em; // Wyrównanie do pierwszej linii tekstu
-          width: 0.5rem;
-          height: 0.5rem;
-          background-color: $color-accent;
-          transform: rotate(45deg); // Obrót kwadratu w diament
-          transition: transform $transition-base, background-color $transition-base;
-        }
-      }
-
-      :global(ol li) {
-        position: relative;
-        margin-left: 1.25rem;
-        padding-left: 0.5rem;
-        margin-bottom: 0.75rem;
-        line-height: 1.6;
-      }
-
+      @include prose;
     } // <- TUTAJ BRAKOWAŁO NAWIASU ZAMYKAJĄCEGO &__content
 
     // Sekcja galerii na pełną szerokość pod treścią
@@ -323,37 +228,6 @@ const imageAlt = project.data.image?.alt || project.data.title;
       margin-bottom: 4.5rem;
       padding-top: 3rem;
       border-top: 1px dashed color.mix($color-text, $color-bg, 30%);
-    }
-
-    &__gallery-title {
-      font-size: 1.75rem;
-      text-transform: none;
-      margin-top: 3rem;
-      margin-bottom: 1.5rem;
-    }
-
-    &__gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
-    }
-
-    &__gallery-item {
-      aspect-ratio: 4 / 3;
-      overflow: hidden;
-      border-radius: 1rem;
-      background-color: color.mix($color-text, $color-bg, 5%);
-    }
-
-    &__gallery-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform $transition-base;
-
-      &:hover {
-        transform: scale(1.05);
-      }
     }
   }
 </style>

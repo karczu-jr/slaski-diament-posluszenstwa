@@ -1,0 +1,231 @@
+---
+// src/components/Logo.astro
+// Logotyp "Śląski Diament Posłuszeństwa": znak diamentu (linia, jak na grafikach zawodów) + napis.
+//
+// variant="hero"    – duży, trzywierszowy:   ŚLĄSKI ——— ◇
+//                                            DIAMENT
+//                                            P O S Ł U S Z E Ń S T W A   (rozciągnięte do szerokości "DIAMENT")
+// variant="compact" – WYBRANY LOGOTYP: znak + dwie linijki (nagłówek, hero, stopka)
+// variant="mark"    – sam znak diamentu
+//
+// size – rozmiar wariantu compact (np. "1rem" nagłówek, "clamp(...)" hero); wszystko skaluje się w em
+interface Props {
+  variant?: "hero" | "compact" | "mark";
+  /** Jasna wersja na ciemne tło (np. stopka) */
+  inverted?: boolean;
+  /** Bazowy rozmiar (font-size) – cały logotyp skaluje się proporcjonalnie */
+  size?: string;
+  class?: string;
+}
+
+const { variant = "compact", inverted = false, size, class: className = "" } = Astro.props;
+const NAME = "Śląski Diament Posłuszeństwa";
+const spread = (word: string) => [...word];
+---
+
+<span
+  class:list={["logo", `logo--${variant}`, { "logo--inverted": inverted }, className]}
+  style={size ? `font-size: ${size}` : undefined}
+>
+  <span class="sr-only">{NAME}</span>
+
+  <span class="logo__visual" aria-hidden="true">
+    {
+      variant === "hero" ? (
+        <>
+          <span class="logo__row logo__row--top">
+            <span class="logo__small">Śląski</span>
+            <span class="logo__rule" />
+            <svg class="logo__mark" viewBox="0 0 64 56" fill="none">
+              <path class="logo__facet" d="M24 18 32 4l8 14Z" />
+              <path d="M16 4h32l14 14-30 34L2 18 16 4Z" />
+              <path d="M2 18h60M16 4l8 14 8-14 8 14 8-14M24 18l8 34 8-34" />
+            </svg>
+          </span>
+          <span class="logo__big">Diament</span>
+          <span class="logo__row logo__row--spread">
+            {spread("Posłuszeństwa").map((ch) => (
+              <span>{ch}</span>
+            ))}
+          </span>
+        </>
+      ) : (
+        <>
+          <svg class="logo__mark" viewBox="0 0 64 56" fill="none">
+            <path class="logo__facet" d="M24 18 32 4l8 14Z" />
+            <path d="M16 4h32l14 14-30 34L2 18 16 4Z" />
+            <path d="M2 18h60M16 4l8 14 8-14 8 14 8-14M24 18l8 34 8-34" />
+          </svg>
+          {variant === "compact" && (
+            <span class="logo__text">
+              <span class="logo__line">Śląski Diament</span>
+              <span class="logo__line logo__line--muted">Posłuszeństwa</span>
+            </span>
+          )}
+        </>
+      )
+    }
+  </span>
+</span>
+
+<style lang="scss">
+  @use "sass:color";
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  .logo {
+    display: inline-block;
+    color: $color-primary;
+    font-family: $font-family-heading;
+    line-height: 1;
+
+    &__visual {
+      display: inline-flex;
+      // globalna reguła `h1 span` ustawia 2.25rem – rozmiar ma iść z .logo (prop `size`)
+      font-size: 1em;
+    }
+
+    // ---------- Znak diamentu ----------
+    &__mark {
+      flex-shrink: 0;
+      height: auto;
+      overflow: visible;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    &__facet {
+      fill: color.mix($color-accent, $color-bg, 22%);
+      stroke: none;
+    }
+
+    // ---------- Wariant: nagłówek ----------
+    // Stały rozmiar bazowy (nie dziedziczy font-size rodzica) – w nagłówku dokładnie jak dotąd.
+    // Inny rozmiar tylko przez prop `size` (styl inline).
+    &--compact {
+      font-size: 1rem;
+    }
+
+    &--compact &__visual,
+    &--mark &__visual {
+      align-items: center;
+      gap: 0.6em;
+    }
+
+    &--compact &__mark {
+      width: 2.25em;
+      color: $color-accent;
+    }
+
+    &--mark &__mark {
+      width: 100%;
+      color: $color-accent;
+    }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2em;
+      font-size: 1em;
+    }
+
+    // display/font-size jawnie – globalna reguła `h1 span` nadpisuje je w nagłówku h1 (hero)
+    &__text,
+    &__line {
+      text-transform: uppercase;
+    }
+
+    &__line {
+      display: block;
+      font-size: 0.78em;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+
+      &--muted {
+        font-weight: 400;
+        letter-spacing: 0.2em;
+        color: color.mix($color-primary, $color-bg, 65%);
+      }
+    }
+
+    // ---------- Wariant: hero ----------
+    &--hero &__visual {
+      display: inline-grid;
+      gap: 0.35em;
+      // cała kompozycja skaluje się od rozmiaru "DIAMENT"
+      font-size: clamp(3.4rem, 13vw, 7.75rem);
+    }
+
+    &__row {
+      display: flex;
+      align-items: center;
+      font-size: 0.22em;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: color.mix($color-primary, $color-bg, 75%);
+
+      &--top {
+        gap: 0.8em;
+      }
+
+      // litery rozłożone równo na szerokość słowa "DIAMENT"
+      &--spread {
+        justify-content: space-between;
+        letter-spacing: 0;
+      }
+    }
+
+    // Globalna reguła `h1 span` (typografia) zmienia rozmiar i wielkość liter –
+    // w logo dziedziczymy je z wiersza
+    &__small,
+    &__row--spread > span {
+      display: inline;
+      font-size: 1em;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    &__rule {
+      flex: 1;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.45;
+    }
+
+    &--hero &__mark {
+      width: 2.6em;
+      color: $color-accent;
+    }
+
+    // ---------- Jasna wersja na ciemne tło ----------
+    &--inverted {
+      color: $color-bg;
+
+      .logo__row,
+      .logo__line--muted {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .logo__mark {
+        color: color.mix($color-accent, $color-bg, 55%);
+      }
+
+      .logo__facet {
+        fill: rgba(255, 255, 255, 0.15);
+      }
+    }
+
+    &__big {
+      font-size: 1em;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      // wizualnie dociśnięte do górnego i dolnego wiersza
+      margin: -0.06em 0 -0.04em;
+    }
+  }
+</style>

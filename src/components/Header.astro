@@ -1,6 +1,7 @@
 ---
 // src/components/Header.astro
 import { SITE } from "../consts";
+import Logo from "./Logo.astro";
 
 const links = [
   { name: "Home", href: "/", target: "_self" },
@@ -11,12 +12,15 @@ const links = [
 ];
 
 const pathname = new URL(Astro.request.url).pathname;
+// Strona główna: menu bez tła i bez logo, przewija się razem z hero;
+// po przewinięciu hero wysuwa się z góry w zwykłej (przyklejonej) formie.
+const isHome = pathname === "/";
 ---
 
-<header class="header">
+<header class:list={["header", { "header--home": isHome }]} data-home-header={isHome ? "" : undefined}>
   <div class="header__container">
-    <a href="/" class="header__logo" aria-label={`${SITE.TITLE} - Strona główna`}>
-      {SITE.TITLE.toUpperCase().charAt(0)}.
+    <a href="/" class="header__logo" aria-label={`${SITE.TITLE} – strona główna`}>
+      <Logo variant="compact" />
     </a>
 
     <!-- Nawigacja Desktopowa -->
@@ -96,6 +100,37 @@ const pathname = new URL(Astro.request.url).pathname;
     backdrop-filter: blur(16px);
     border-bottom: 1px solid mix($color-text, $color-bg, 10%);
 
+    // ---------- Tryb strony głównej ----------
+    // Stan początkowy: część strony nad hero (przewija się), bez tła, ramki i logo
+    &--home:not(.is-docked) {
+      position: absolute;
+      background-color: transparent;
+      backdrop-filter: none;
+      border-bottom-color: transparent;
+
+      .header__logo {
+        visibility: hidden; // zachowuje miejsce, ukryte też dla czytników i Tab
+      }
+    }
+
+    // Po przewinięciu hero: zwykły wygląd, wjazd z góry
+    &--home.is-docked {
+      animation: header-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+
+      @media (prefers-reduced-motion: reduce) {
+        animation: none;
+      }
+    }
+
+    @keyframes header-slide-in {
+      from {
+        transform: translateY(-100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+
     &__container {
       display: flex;
       align-items: center;
@@ -106,8 +141,8 @@ const pathname = new URL(Astro.request.url).pathname;
     }
 
     &__logo {
-      font-size: 2.25rem;
-      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
       color: $color-primary;
       text-decoration: none;
       line-height: 1;
@@ -277,5 +312,16 @@ const pathname = new URL(Astro.request.url).pathname;
         menuMobile.setAttribute("aria-hidden", String(!newExpandedState));
       }
     });
+
+    // Strona główna: przyklej menu dopiero, gdy hero w całości zniknie u góry ekranu
+    const header = document.querySelector<HTMLElement>("[data-home-header]");
+    const hero = document.querySelector(".hero");
+    if (header && hero) {
+      const observer = new IntersectionObserver(([entry]) => {
+        const scrolledPast = !entry.isIntersecting && entry.boundingClientRect.bottom <= 0;
+        header.classList.toggle("is-docked", scrolledPast);
+      });
+      observer.observe(hero);
+    }
   });
 </script>

@@ -5,29 +5,13 @@ import Hero from "../components/Hero.astro";
 import About from "../components/About.astro";
 import Posts from "../components/Posts.astro";
 import Projects from "../components/Projects.astro";
-import Partners from "../components/Partners.astro";
 import Contact from "../components/Contact.astro";
 
 import { SITE } from "../consts";
 
-// Importy obrazów z src/assets/img/
-import logoZkwp from "../assets/img/partners/zkwp.svg";
-import logoSponsor from "../assets/img/partners/ulozpsa_logo.svg";
-
-const partnersList = [
-  {
-    name: "ZKwP Zabrze",
-    logo: logoZkwp,
-    url: "https://zkzabrzenet.pl",
-  },
-  {
-    name: "Sponsor Główny",
-    logo: logoSponsor, // Bez url – wyrenderuje się jako statyczne logo
-  },
-];
 ---
 
-<Layout title={SITE.TITLE} description={SITE.DESCRIPTION}>
+<Layout title="Zawody Obedience" description={SITE.DESCRIPTION}>
   <div class="home-page">
     <section id="hero" aria-label="Wprowadzenie" class="home-page__section">
       <Hero />
