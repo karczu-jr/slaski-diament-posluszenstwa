@@ -4,7 +4,7 @@ export const SITE = {
   TITLE: "Śląski Diament Posłuszeństwa",
   DESCRIPTION:
     "Śląski Diament Posłuszeństwa – zawody Obedience na Śląsku. Terminy, zapisy, wyniki i aktualności.",
-  EMAIL: "zawody@sdp.pl",
+  EMAIL: "zawody@slaskieobi.pl",
 };
 
 export const BLOG = {
