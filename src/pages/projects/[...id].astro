@@ -607,13 +607,15 @@ const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
     }
 
     // ---------- PASEK SEKCJI ----------
+    // Dosunięty do menu głównego (bez szczeliny), z tym samym tłem i rozmyciem;
+    // od menu oddziela go jego dolna kreska, a od treści – taka sama kreska pod spodem.
     &__subnav {
       position: sticky;
-      top: $header-h;
+      top: calc(var(--header-top, 0px) + var(--header-h, #{$header-h}));
       z-index: 20;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid #ededed;
+      background: rgba($color-bg, 0.8);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid mix($color-text, $color-bg, 10%);
 
       nav {
         max-width: 1280px;

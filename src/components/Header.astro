@@ -314,6 +314,15 @@ const isHome = pathname === "/";
       }
     });
 
+    // Wysokość menu jako zmienna CSS – przyklejone paski pod menu (np. sekcje edycji) dosuwają się do niego
+    const siteHeader = document.querySelector<HTMLElement>(".header");
+    if (siteHeader) {
+      const setH = () =>
+        document.documentElement.style.setProperty("--header-h", `${siteHeader.offsetHeight}px`);
+      setH();
+      new ResizeObserver(setH).observe(siteHeader);
+    }
+
     // Strona główna: przyklej menu dopiero, gdy hero w całości zniknie u góry ekranu
     const header = document.querySelector<HTMLElement>("[data-home-header]");
     const hero = document.querySelector(".hero");

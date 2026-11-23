@@ -10,6 +10,7 @@
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
 import SectionHead from "./SectionHead.astro";
+import Gallery from "../Gallery.astro";
 import { getEditions } from "../../data/editions";
 
 const { past } = await getEditions();
@@ -18,7 +19,10 @@ const withGallery = past.filter((e) => e.data.gallery?.length);
 let photos = withGallery.flatMap((e) => (e.data.gallery ?? []).filter((g) => g.home));
 if (photos.length === 0) photos = withGallery[0]?.data.gallery ?? [];
 
-const galleryHref = withGallery[0] ? `/projects/${withGallery[0].id}` : "/projects";
+// "Cała galeria" – podgląd wszystkich zdjęć ze wszystkich edycji (od najnowszej)
+const allPhotos = withGallery.flatMap((e) => e.data.gallery ?? []);
+const n = allPhotos.length;
+const photosLabel = `${n} ${n === 1 ? "zdjęcie" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "zdjęcia" : "zdjęć"}`;
 
 type Slot = { kind: "photo" | "classes" | "credit" | "more"; ratio: string };
 type Tile =
@@ -86,10 +90,15 @@ const halves = [columns.slice(0, 2), columns.slice(2, 4)];
                         </>
                       )}
                       {t.kind === "more" && (
-                        <a href={galleryHref} class="gallery__more">
-                          <span class="gallery__emoji" aria-hidden="true">🐾</span>
-                          <span class="gallery__more-text">Cała galeria <span class="nudge" aria-hidden="true">👉</span></span>
-                        </a>
+                        <Gallery images={allPhotos} trigger fallbackAlt="Zdjęcie z zawodów">
+                          <button type="button" class="gallery__more" aria-haspopup="dialog">
+                            <span class="gallery__emoji" aria-hidden="true">🐾</span>
+                            <span class="gallery__more-text">
+                              Cała galeria <span class="nudge" aria-hidden="true">👉</span>
+                              <span class="gallery__more-count">{photosLabel}</span>
+                            </span>
+                          </button>
+                        </Gallery>
                       )}
                     </li>
                   ))}
@@ -212,15 +221,6 @@ const halves = [columns.slice(0, 2), columns.slice(2, 4)];
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.5s ease;
-
-      @media (prefers-reduced-motion: reduce) {
-        transition: none;
-      }
-    }
-
-    &__tile:hover &__img {
-      transform: scale(1.04);
     }
 
     &__emoji {
@@ -291,7 +291,19 @@ const halves = [columns.slice(0, 2), columns.slice(2, 4)];
     &__more {
       position: absolute;
       inset: 0;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
       display: flex;
+
+      &:focus-visible {
+        outline: 3px solid $color-accent;
+        outline-offset: -6px;
+        border-radius: inherit;
+      }
       flex-direction: column;
       justify-content: space-between;
       padding: 16px;
@@ -300,6 +312,19 @@ const halves = [columns.slice(0, 2), columns.slice(2, 4)];
 
       @include respond-to("md") {
         padding: 24px;
+      }
+    }
+
+    &__more-count {
+      display: block;
+      margin-top: 4px;
+      font-family: $font-family-body;
+      font-weight: 500;
+      font-size: 13px;
+      color: $home-muted;
+
+      @include respond-to("md") {
+        font-size: 15px;
       }
     }
 
