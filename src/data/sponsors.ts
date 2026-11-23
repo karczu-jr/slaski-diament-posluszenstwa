@@ -31,6 +31,7 @@ export const sponsors: Partner[] = [
         {
           name: "Marta Wlazło",
           logo: martaLogo,
+          url: "https://mw.momentfreeze.com/2026-10-sdp",
           alt: "Logo Marta Wlazło",
         },
       ]
