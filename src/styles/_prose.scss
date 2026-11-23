@@ -82,6 +82,17 @@
     }
   }
 
+  // Lista bez znaczników (np. wyniki z medalami i numerami miejsc).
+  // W MDX: <div className="plain-list"> + pusta linia + lista + pusta linia + </div>
+  :global(.plain-list ul li) {
+    padding-left: 0;
+    margin-bottom: 0.4rem;
+
+    &::before {
+      content: none;
+    }
+  }
+
   :global(ol li) {
     position: relative;
     margin-left: 1.25rem;
