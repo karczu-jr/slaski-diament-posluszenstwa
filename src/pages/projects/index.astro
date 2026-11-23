@@ -1,141 +1,290 @@
 ---
 // src/pages/projects/index.astro
-// Lista wszystkich edycji zawodów – duże karty w naprzemiennym układzie.
+// Lista edycji zawodów (wersja 5): nagłówek, karta następnej edycji i wszystkie przeszłe edycje.
+// Dane z src/content/projects/*.mdx – nowa edycja = nowy plik .mdx.
 import Layout from "../../layouts/Layout.astro";
-import EventCard from "../../components/EventCard.astro";
-import { getCollection, type CollectionEntry } from "astro:content";
+import HomeSignup from "../../components/home/HomeSignup.astro";
+import { Image } from "astro:assets";
 import { PROJECTS } from "../../consts";
+import { getEditions, formatShortDate } from "../../data/editions";
 
-const allProjects: CollectionEntry<"projects">[] = (await getCollection("projects")).sort(
-  (a, b) => (b.data.date?.valueOf() || 0) - (a.data.date?.valueOf() || 0)
-);
-
-const countLabel = (n: number) => {
-  if (n === 1) return "1 edycja";
-  const last = n % 10;
-  const lastTwo = n % 100;
-  const few = last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14);
-  return `${n} ${few ? "edycje" : "edycji"}`;
-};
+const { past, next, nextTitle, nextWhen } = await getEditions();
+const canRegister = !!next?.data.formUrl && !!next?.data.registrationOpen;
 ---
 
 <Layout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>
-  <section class="events-page" aria-labelledby="events-heading">
-    <header class="events-page__header">
-      <div class="events-page__heading">
-        <h1 id="events-heading" class="events-page__title">Zawody</h1>
-        <span class="events-page__count">{countLabel(allProjects.length)}</span>
-      </div>
-      <p class="events-page__lead">
-        Wszystkie edycje Śląskiego Diamentu Posłuszeństwa – terminy, miejsca, zapisy i wyniki.
+  <div class="editions-page">
+    <header class="editions-page__header">
+      <p class="editions-page__eyebrow">🏁 Zawody</p>
+      <h1 class="editions-page__title">Edycje zawodów Obedience</h1>
+      <p class="editions-page__lead">
+        Wszystkie edycje Śląskiego Diamentu Posłuszeństwa – terminy, miejsca, wyniki i galerie.
       </p>
     </header>
 
-    {
-      allProjects.length > 0 ? (
-        <ul class="events-page__list" role="list">
-          {allProjects.map((project, index) => (
-            <li class="events-page__item">
-              <EventCard entry={project} eager={index === 0} />
-            </li>
-          ))}
+    <section class="editions-page__list" aria-label="Lista edycji">
+      <div class="editions-page__wrap">
+        <ul class="editions-page__grid" role="list">
+          <!-- następna edycja -->
+          <li class="editions-page__next">
+            <svg class="editions-page__diamond" viewBox="0 0 64 56" fill="none" aria-hidden="true">
+              <path d="M24 18 32 4l8 14Z" fill="rgba(242,194,48,.25)"></path>
+              <path d="M16 4h32l14 14-30 34L2 18 16 4Z"></path>
+              <path d="M2 18h60M16 4l8 14 8-14 8 14 8-14M24 18l8 34 8-34"></path>
+            </svg>
+            <h2 class="editions-page__card-title editions-page__card-title--light">{nextTitle}</h2>
+            <p class="editions-page__next-text">{nextWhen ? `Planowana: ${nextWhen}.` : "Termin ogłosimy wkrótce."}</p>
+            {
+              canRegister ? (
+                <a href={next!.data.formUrl!} class="editions-page__next-btn" target="_blank" rel="noopener noreferrer">
+                  📝 Zapisz się<span class="sr-only"> (otwiera się w nowej karcie)</span>
+                </a>
+              ) : next ? (
+                <a href={`/projects/${next.id}`} class="editions-page__next-btn">
+                  Szczegóły <span class="nudge" aria-hidden="true">👉</span>
+                </a>
+              ) : (
+                <a href="#powiadom" class="editions-page__next-btn">🔔 Powiadom mnie</a>
+              )
+            }
+          </li>
+
+          {
+            past.map((e, i) => (
+              <li>
+                <a href={`/projects/${e.id}`} class="editions-page__card">
+                  {e.data.image && (
+                    <Image
+                      src={e.data.image.url}
+                      alt=""
+                      widths={[400, 600, 800]}
+                      sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
+                      class="editions-page__img"
+                      loading={i < 2 ? "eager" : "lazy"}
+                    />
+                  )}
+                  <span class="editions-page__body">
+                    <span class="editions-page__meta">
+                      {[formatShortDate(e.data.date), e.data.location].filter(Boolean).join(" · ")}
+                    </span>
+                    <h2 class="editions-page__card-title">{e.data.title}</h2>
+                    {e.data.classes && <span class="editions-page__desc">Klasy {e.data.classes}</span>}
+                    <span class="editions-page__tags">
+                      {e.data.results?.length && <span>🏆 Wyniki</span>}
+                      {e.data.schedule?.length && <span>⏱️ Harmonogram</span>}
+                      {e.data.gallery?.length && <span>📸 Galeria</span>}
+                    </span>
+                    <span class="editions-page__more">
+                      Zobacz edycję <span class="nudge" aria-hidden="true">👉</span>
+                    </span>
+                  </span>
+                </a>
+              </li>
+            ))
+          }
         </ul>
-      ) : (
-        <p class="events-page__empty">Wkrótce ogłosimy pierwszą edycję zawodów.</p>
-      )
-    }
-  </section>
+      </div>
+    </section>
+
+    <HomeSignup tone="white" />
+  </div>
 </Layout>
 
 <style lang="scss">
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
 
-  .events-page {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 6.5rem 1.5rem 4.5rem;
+  .editions-page {
+    background: #ffffff;
+    font-size: 17px;
+    line-height: 1.6;
 
     &__header {
-      max-width: 48rem;
-      margin-bottom: 2.5rem;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 120px 24px 48px;
 
       @include respond-to("md") {
-        margin-bottom: 3.5rem;
+        padding: 144px 24px 56px;
       }
     }
 
-    // Nagłówek z licznikiem wpisów obok, wyrównanym do linii bazowej tytułu
-    &__heading {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.25rem 1rem;
-      margin-bottom: 1rem;
+    &__eyebrow {
+      @include home-eyebrow;
     }
 
     &__title {
-      margin: 0;
-      font-size: 3rem;
-      line-height: 1;
+      @include home-h2;
+      font-weight: 600;
+      font-size: 36px;
 
       @include respond-to("md") {
-        font-size: 5rem;
-      }
-
-      @include respond-to("lg") {
-        font-size: 6.5rem;
-      }
-    }
-
-    &__count {
-      font-family: $font-family-heading;
-      font-size: 0.9rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      color: $color-accent;
-
-      @include respond-to("md") {
-        font-size: 1.1rem;
+        font-size: 52px;
       }
     }
 
     &__lead {
-      margin: 0;
-      font-size: 1.125rem;
-      line-height: 1.6;
-      color: $color-text;
+      margin: 16px 0 0;
+      max-width: 640px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #3f3f46;
 
       @include respond-to("md") {
-        font-size: 1.25rem;
+        font-size: 20px;
       }
     }
 
+    // Lista na granacie – jak sekcja edycji na stronie głównej
     &__list {
+      background: $color-primary;
+    }
+
+    &__wrap {
+      @include home-wrap;
+    }
+
+    &__grid {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 24px;
+
+      @include respond-to("md") {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      @include respond-to("lg") {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      > li {
+        display: flex;
+      }
+    }
+
+    &__next {
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 32px;
+      min-height: 320px;
+      border-radius: $home-radius;
+      border: 2px dashed $home-yellow;
+    }
+
+    &__diamond {
+      width: 48px;
+
+      path {
+        stroke: $home-yellow;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+    }
+
+    &__next-text {
+      margin: 0;
+      font-size: 15px;
+      color: #c3cad8;
+    }
+
+    &__next-btn {
+      @include home-button-dark;
+      margin-top: 6px;
+      background: $home-yellow;
+      color: $color-primary;
+
+      &:hover {
+        background: #ffffff;
+        color: $color-primary;
+      }
+    }
+
+    &__card {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
-      margin: 0;
-      padding: 0;
-      list-style: none;
+      width: 100%;
+      background: #ffffff;
+      border-radius: $home-radius;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      @include home-card-hover;
+    }
 
-      @include respond-to("md") {
-        gap: 2rem;
+    &__img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+    }
+
+    &__body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 24px 28px 28px;
+    }
+
+    &__meta {
+      font-family: $font-family-heading;
+      font-size: 13px;
+      color: $home-muted;
+    }
+
+    &__card-title {
+      @include heading-reset;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 28px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      color: $color-primary;
+
+      @include respond-to("lg") {
+        font-size: 32px;
+      }
+
+      &--light {
+        color: #ffffff;
       }
     }
 
-    &__item {
-      margin: 0;
-      padding: 0;
+    &__desc {
+      font-size: 15px;
+      color: $home-text;
+    }
 
-      &::before {
-        content: none;
+    &__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+
+      span {
+        font-size: 12px;
+        font-weight: 500;
+        color: $color-primary;
+        background: $home-grey;
+        padding: 3px 10px;
+        border-radius: 999px;
+        word-spacing: 0.14em;
       }
     }
 
-    &__empty {
-      color: $color-text;
+    &__more {
+      margin-top: auto;
+      padding-top: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      color: $color-primary;
+      word-spacing: 0.14em;
     }
   }
 </style>

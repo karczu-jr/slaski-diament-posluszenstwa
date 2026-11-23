@@ -45,10 +45,54 @@ const projects = defineCollection({
       url: image(), // ZMIENIONO: z.string() na image()
       alt: z.string(),
     }).optional(),
+    // Planowana edycja bez konkretnej daty, np. "wiosna 2027" – pokazujemy ją jako "następną edycję"
+    planned: z.string().optional(),
+    // --- Fakty w hero strony edycji ---
+    classes: z.string().optional(), // np. "0, 1, 2, 3"
+    slots: z.number().optional(), // liczba miejsc startowych
+    fee: z.string().optional(), // np. "170 zł"
+    venue: z.string().optional(), // opis miejsca, np. "plac o podłożu kwarcowym"
+    mapUrl: z.string().url().optional(), // link do Map Google
+    // Przycisk "Zapisz się" (formUrl) widać tylko, gdy zapisy są otwarte
+    registrationOpen: z.boolean().optional(),
+    // Zespół zawodów, np. { role: "Sędzia", name: "..." }
+    team: z.array(z.object({ role: z.string(), name: z.string() })).optional(),
+    // Wyniki: klasa + lista zespołów (pierwsze trzy dostają medale)
+    results: z
+      .array(
+        z.object({
+          class: z.string(),
+          photo: image().optional(),
+          entries: z.array(
+            z.object({
+              handler: z.string(),
+              dog: z.string(),
+              points: z.string().optional(),
+              grade: z.string().optional(),
+              note: z.string().optional(), // np. "nieobecna"
+            })
+          ),
+        })
+      )
+      .optional(),
+    // Plan dnia z listami startowymi
+    scheduleNote: z.string().optional(),
+    schedule: z
+      .array(
+        z.object({
+          time: z.string(),
+          title: z.string(),
+          description: z.string().optional(),
+          startList: z.array(z.string()).optional(),
+        })
+      )
+      .optional(),
     gallery: z.array(
       z.object({
         url: image(), // ZMIENIONO: z.string() na image()
         alt: z.string(),
+        // home: true – zdjęcie trafia do galerii "Zdjęcia z ringu" na stronie głównej
+        home: z.boolean().optional(),
       })
     ).optional(),
     partners: z

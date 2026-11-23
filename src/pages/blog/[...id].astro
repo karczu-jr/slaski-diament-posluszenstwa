@@ -1,14 +1,14 @@
 ---
 // src/pages/blog/[...id].astro
-// Strona pojedynczego newsa: nagłówek, szeroki baner 21:9, treść MDX, galeria i "Czytaj także".
-import ProseImage from "../../components/ProseImage.astro";
+// Pojedynczy news (wersja 5): powrót do listy, nagłówek (kategoria, data, czas czytania),
+// okładka w naturalnych proporcjach, treść MDX, galeria, "Czytaj także" i zapis na powiadomienia.
 import Layout from "../../layouts/Layout.astro";
-import { getCollection, render, type CollectionEntry } from "astro:content";
-import { Image } from "astro:assets";
-import BackButton from "../../components/BackButton.astro";
+import ProseImage from "../../components/ProseImage.astro";
 import Gallery from "../../components/Gallery.astro";
 import NewsCard from "../../components/NewsCard.astro";
-import ButtonSecondary from "../../components/ButtonSecondary.astro";
+import HomeSignup from "../../components/home/HomeSignup.astro";
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
 
 export async function getStaticPaths() {
   const posts = (await getCollection("blog"))
@@ -19,7 +19,7 @@ export async function getStaticPaths() {
     params: { id: post.id },
     props: {
       post,
-      // Do sekcji "Czytaj także": 3 najnowsze wpisy poza bieżącym
+      // "Czytaj także": 3 najnowsze wpisy poza bieżącym
       related: posts.filter((p) => p.id !== post.id).slice(0, 3),
     },
   }));
@@ -34,223 +34,345 @@ const { post, related } = Astro.props;
 const { Content } = await render(post);
 const { title, description, date, time, tags, image, gallery } = post.data;
 
-const formattedDate = date
-  ? date.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })
-  : null;
+const formattedDate = date?.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" });
 
 // Szacowany czas czytania (~200 słów na minutę)
 const words = (post.body ?? "").split(/\s+/).filter(Boolean).length;
 const readingMinutes = Math.max(1, Math.round(words / 200));
 ---
 
-<Layout title={title} description={description}>
-  <div class="news-article">
-    <div class="news-article__back">
-      <BackButton fallbackHref="/blog" />
-    </div>
+<Layout title={title} description={description ?? title} image={image?.url.src}>
+  <div class="article">
+    <article>
+      <header class="article__header">
+        <a href="/blog" class="article__back"><span class="article__back-icon" aria-hidden="true">👈</span> Wszystkie newsy</a>
 
-    <header class="news-article__header">
-      <p class="news-article__meta">
-        {tags?.map((tag) => <span class="news-article__tag">{tag}</span>)}
-        {
-          formattedDate && (
-            <time datetime={date?.toISOString()}>
-              {formattedDate}
-              {time && `, ${time}`}
-            </time>
-          )
-        }
-        <span aria-hidden="true">·</span>
-        <span>{readingMinutes} min czytania</span>
-      </p>
+        <p class="article__meta">
+          {tags?.[0] && <span class="article__tag">{tags[0]}</span>}
+          {
+            date && (
+              <time datetime={date.toISOString()}>
+                {formattedDate}
+                {time && `, ${time}`}
+              </time>
+            )
+          }
+          <span aria-hidden="true">·</span>
+          <span>{readingMinutes} min czytania</span>
+        </p>
 
-      <h1 class="news-article__title">{title}</h1>
+        <h1 class="article__title">{title}</h1>
+        {description && <p class="article__lead">{description}</p>}
+      </header>
 
-      {description && <p class="news-article__lead">{description}</p>}
-    </header>
+      {
+        image?.url && (
+          <figure class="article__cover">
+            <Image
+              src={image.url}
+              alt={image.alt || title}
+              widths={[480, 832, 1248, 1664]}
+              sizes="(min-width: 900px) 832px, 100vw"
+              class="article__cover-img"
+              loading="eager"
+            />
+          </figure>
+        )
+      }
 
-    {
-      image?.url && (
-        <div class="news-article__cover">
-          <Image
-            src={image.url}
-            alt={image.alt || title}
-            widths={[640, 1024, 1600, 2000]}
-            sizes="(min-width: 1280px) 1232px, 100vw"
-            class="news-article__cover-image"
-            loading="eager"
-          />
-        </div>
-      )
-    }
+      <div class="article__content">
+        <Content components={{ img: ProseImage }} />
+      </div>
 
-    <article class="news-article__content">
-      <Content components={{ img: ProseImage }} />
+      {
+        gallery && gallery.length > 0 && (
+          <div class="article__gallery">
+            <Gallery images={gallery} fallbackAlt={`Zdjęcie – ${title}`} />
+          </div>
+        )
+      }
     </article>
 
     {
-      gallery && gallery.length > 0 && (
-        <div class="news-article__gallery">
-          <Gallery images={gallery} fallbackAlt={`Zdjęcie – ${title}`} />
-        </div>
-      )
-    }
-
-    {
       related.length > 0 && (
-        <section class="news-article__related" aria-labelledby="related-heading">
-          <div class="news-article__related-header">
-            <h2 id="related-heading" class="news-article__related-title">
-              Czytaj także
-            </h2>
-            <ButtonSecondary href="/blog" text="Wszystkie newsy" />
+        <section class="article__related" aria-labelledby="related-title">
+          <div class="article__related-wrap">
+            <div class="article__related-head">
+              <div>
+                <p class="article__related-eyebrow">📰 Newsy</p>
+                <h2 id="related-title" class="article__related-title">Czytaj także</h2>
+              </div>
+              <a href="/blog" class="article__related-all">
+                Wszystkie newsy <span class="nudge" aria-hidden="true">👉</span>
+              </a>
+            </div>
+            <ul class="article__related-grid" role="list">
+              {related.map((item) => (
+                <li>
+                  <NewsCard entry={item} />
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul class="news-article__related-grid" role="list">
-            {related.map((item) => (
-              <li class="news-article__related-item">
-                <NewsCard entry={item} />
-              </li>
-            ))}
-          </ul>
         </section>
       )
     }
+
+    <HomeSignup tone="white" />
   </div>
 </Layout>
 
 <style lang="scss">
-  @use "sass:color";
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
   @use "../../styles/prose" as *;
 
-  $dashed: 1px dashed color.mix($color-text, $color-bg, 30%);
+  .article {
+    background: #ffffff;
+    font-size: 17px;
+    line-height: 1.6;
 
-  .news-article {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 4.5rem 1.5rem;
+    // Wąska kolumna do czytania – ok. 70 znaków w linii
+    &__header,
+    &__cover,
+    &__content {
+      max-width: 832px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 20px;
+      padding-right: 20px;
 
-    &__back {
-      margin: 1.5rem 0;
+      @include respond-to("md") {
+        padding-left: 24px;
+        padding-right: 24px;
+        box-sizing: content-box;
+      }
     }
 
-    // ---------- Nagłówek ----------
     &__header {
-      max-width: 52rem;
-      margin: 0 auto 2rem;
+      padding-top: 112px;
+      padding-bottom: 32px;
+
+      @include respond-to("md") {
+        padding-top: 136px;
+        padding-bottom: 40px;
+      }
+    }
+
+    &__back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+      margin-bottom: 20px;
+      font-size: 15px;
+      font-weight: 500;
+      color: $color-primary;
+      text-decoration: none;
+      word-spacing: 0.14em;
+
+      &:hover {
+        color: $color-accent;
+      }
+    }
+
+    // Strzałka powrotu przesuwa się w lewo – lustrzane odbicie animacji 👉
+    &__back-icon {
+      display: inline-block;
+      transition: transform $transition-base;
+
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
+    }
+
+    &__back:hover &__back-icon,
+    &__back:focus-visible &__back-icon {
+      transform: translateX(-4px);
+
+      @media (prefers-reduced-motion: reduce) {
+        transform: none;
+      }
     }
 
     &__meta {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.5rem 0.75rem;
-      margin: 0 0 1.25rem;
-      font-size: 0.9rem;
-      color: color.mix($color-text, $color-bg, 75%);
+      gap: 8px 10px;
+      margin: 0 0 16px;
+      font-size: 14px;
+      color: $home-muted;
     }
 
     &__tag {
-      padding: 0.2rem 0.65rem;
       font-family: $font-family-heading;
-      font-size: 0.75rem;
+      font-size: 12px;
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: $color-accent;
-      background: color.mix($color-accent, $color-bg, 10%);
+      background: $home-accent-soft;
+      padding: 3px 10px;
       border-radius: 999px;
     }
 
     &__title {
-      margin: 0 0 1.25rem;
-      font-size: 2rem;
-      line-height: 1.15;
-      text-transform: none;
+      @include home-h2;
+      font-weight: 600;
+      font-size: 30px;
+      line-height: 1.2;
 
       @include respond-to("md") {
-        font-size: 3rem;
+        font-size: 44px;
       }
     }
 
     &__lead {
-      margin: 0;
-      font-size: 1.2rem;
-      line-height: 1.6;
-      color: $color-text;
+      margin: 20px 0 0;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #3f3f46;
 
       @include respond-to("md") {
-        font-size: 1.35rem;
+        font-size: 20px;
       }
     }
 
-    // ---------- Baner (szeroki, ale niski – jak w edycjach zawodów) ----------
+    // Okładka w naturalnych proporcjach (grafiki z tekstem nie są przycinane)
     &__cover {
-      width: 100%;
-      aspect-ratio: 3 / 2;
-      margin: 0 0 3rem;
-      overflow: hidden;
-      border-radius: 1rem;
-      background: color.mix($color-text, $color-bg, 6%);
-
-      @include respond-to("md") {
-        aspect-ratio: 21 / 9;
-      }
+      margin-top: 0;
+      margin-bottom: 40px;
     }
 
-    &__cover-image {
+    &__cover-img {
       display: block;
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: auto;
+      max-height: 720px;
+      object-fit: contain;
+      border-radius: $home-radius;
+      background: $home-grey;
     }
 
-    // ---------- Treść ----------
+    // Treść MDX
     &__content {
-      max-width: 52rem;
-      margin: 0 auto;
-      font-size: 1.125rem;
-      line-height: 1.7;
-      color: $color-text;
+      padding-bottom: 72px;
+      font-size: 17px;
+      color: $home-text;
+
+      @include respond-to("md") {
+        font-size: 18px;
+        padding-bottom: 96px;
+      }
 
       @include prose;
+
+      :global(p) {
+        margin: 0 0 1.1em;
+        line-height: 1.75;
+      }
+
+      :global(h2) {
+        @include heading-reset;
+        margin: 2em 0 0.75em;
+        font-family: $font-family-heading;
+        font-weight: 600;
+        font-size: 22px;
+        line-height: 1.25;
+        color: $color-primary;
+
+        @include respond-to("md") {
+          font-size: 26px;
+        }
+      }
+
+      :global(h3) {
+        @include heading-reset;
+        margin: 1.6em 0 0.6em;
+        font-family: $font-family-heading;
+        font-weight: 600;
+        font-size: 19px;
+        color: $color-primary;
+      }
+
+      :global(a) {
+        color: $color-accent;
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+        overflow-wrap: anywhere;
+
+        &:hover {
+          color: $color-primary;
+        }
+      }
+
+      :global(img) {
+        max-height: none;
+        border-radius: $home-radius;
+      }
+
+      :global(ul),
+      :global(ol) {
+        margin: 0 0 1.25em;
+        padding: 0;
+      }
+
+      :global(blockquote) {
+        margin: 1.5em 0;
+        padding: 16px 24px;
+        border-left: 4px solid $home-yellow;
+        background: $home-grey;
+        border-radius: 0 16px 16px 0;
+      }
     }
 
     &__gallery {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: $dashed;
+      max-width: 1280px;
+      margin: -24px auto 0;
+      padding: 0 24px 72px;
+
+      @include respond-to("md") {
+        padding: 0 24px 96px;
+      }
     }
 
-    // ---------- Czytaj także ----------
+    // Czytaj także – szare tło jak newsy na stronie głównej
     &__related {
-      margin-top: 4.5rem;
-      padding-top: 3rem;
-      border-top: $dashed;
+      background: $home-grey;
     }
 
-    &__related-header {
+    &__related-wrap {
+      @include home-wrap;
+    }
+
+    &__related-head {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      gap: 20px 24px;
+      margin-bottom: 36px;
+    }
+
+    &__related-eyebrow {
+      @include home-eyebrow;
     }
 
     &__related-title {
-      margin: 0;
-      font-size: 1.75rem;
-      text-transform: none;
+      @include home-h2;
+    }
+
+    &__related-all {
+      @include home-pill;
     }
 
     &__related-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
+      list-style: none;
       margin: 0;
       padding: 0;
-      list-style: none;
+      display: grid;
+      gap: 24px;
 
       @include respond-to("sm") {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -258,16 +380,10 @@ const readingMinutes = Math.max(1, Math.round(words / 200));
 
       @include respond-to("lg") {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 2rem;
       }
-    }
 
-    &__related-item {
-      margin: 0;
-      padding: 0;
-
-      &::before {
-        content: none;
+      > li {
+        display: flex;
       }
     }
   }

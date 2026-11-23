@@ -1,0 +1,138 @@
+---
+// src/components/Team.astro
+// Sekcja "Organizatorzy" na stronie "O nas" – dwie osoby ze zdjęciem i krótkim opisem.
+// TODO: imiona, role i opisy to treść zastępcza – podmień na prawdziwe dane.
+import { Image } from "astro:assets";
+import photoA from "../assets/img/projects/sdp1/galeria/sdp1-marta-25.webp";
+import photoB from "../assets/img/projects/sdp1/galeria/sdp1-marta-10.webp";
+
+const people = [
+  {
+    name: "Imię Nazwisko",
+    role: "Organizatorka zawodów",
+    photo: photoA,
+    position: "35% 40%",
+    bio: [
+      "Przewodniczka i trenerka obedience. Od lat startuje w zawodach w klasach 0–3, a na co dzień prowadzi zajęcia z posłuszeństwa sportowego.",
+      "Odpowiada za harmonogram, zapisy i kontakt z zawodnikami.",
+    ],
+  },
+  {
+    name: "Imię Nazwisko",
+    role: "Współorganizatorka",
+    photo: photoB,
+    position: "50% 35%",
+    bio: [
+      "Związana z ZKwP Oddział Zabrze. Dba o plac, sędziów i stewardów, żeby każdy start przebiegał sprawnie.",
+      "Pilnuje też nagród i współpracy ze sponsorami.",
+    ],
+  },
+];
+---
+
+<section class="team" aria-labelledby="team-title">
+  <h2 id="team-title" class="team__title">Organizatorzy</h2>
+
+  <ul class="team__list">
+    {
+      people.map((person) => (
+        <li class="team__card">
+          <div class="team__photo-wrapper">
+            <Image
+              src={person.photo}
+              alt={`${person.name} – ${person.role}`}
+              class="team__photo"
+              width={640}
+              widths={[400, 640, 960]}
+              sizes="(min-width: 768px) 40vw, 100vw"
+              style={`object-position: ${person.position}`}
+              loading="lazy"
+            />
+          </div>
+          <div class="team__body">
+            <p class="team__role">{person.role}</p>
+            <h3 class="team__name">{person.name}</h3>
+            {person.bio.map((p) => <p class="team__bio">{p}</p>)}
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+
+  .team {
+    margin-top: 4rem;
+
+    @include respond-to("md") {
+      margin-top: 6rem;
+    }
+
+    &__title {
+      margin-bottom: 2rem;
+    }
+
+    &__list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      @include respond-to("md") {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    &__card {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    &__photo-wrapper {
+      aspect-ratio: 4 / 3;
+      border-radius: 1.5rem;
+      overflow: hidden;
+
+      @include respond-to("md") {
+        border-radius: 2rem;
+      }
+    }
+
+    &__photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    &__role {
+      margin: 0;
+      font-family: $font-family-heading;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: $color-accent;
+    }
+
+    &__name {
+      margin: 0;
+      font-size: 1.75rem;
+      color: $color-primary;
+    }
+
+    &__bio {
+      margin: 0;
+    }
+  }
+</style>

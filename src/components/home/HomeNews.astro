@@ -1,0 +1,82 @@
+---
+// src/components/home/HomeNews.astro
+// Newsy zaraz pod hero: duża karta z najnowszym wpisem + 3 mniejsze.
+// Wpisy biorą się automatycznie z src/content/blog/*.mdx (bez draft: true).
+import { getCollection, type CollectionEntry } from "astro:content";
+import SectionHead from "./SectionHead.astro";
+import NewsCard from "../NewsCard.astro";
+
+const posts: CollectionEntry<"blog">[] = (await getCollection("blog"))
+  .filter((p) => !p.data.draft && p.data.date)
+  .sort((a, b) => b.data.date!.valueOf() - a.data.date!.valueOf());
+
+const [featured, ...rest] = posts;
+const small = rest.slice(0, 3);
+---
+
+<section class="news" aria-labelledby="news-title">
+  <div class="news__wrap">
+    <SectionHead eyebrow="📰 Newsy" title="Najnowsze wiadomości" id="news-title">
+      <a slot="action" href="/blog" class="news__all"
+        >Wszystkie newsy ({posts.length}) <span class="nudge" aria-hidden="true">👉</span></a
+      >
+    </SectionHead>
+
+    {
+      featured ? (
+        <>
+          <NewsCard entry={featured} variant="featured" badge="Najnowsze" />
+          {small.length > 0 && (
+            <ul class="news__grid">
+              {small.map((post) => (
+                <li>
+                  <NewsCard entry={post} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <p>Wkrótce pojawią się tu pierwsze newsy.</p>
+      )
+    }
+  </div>
+</section>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
+
+  .news {
+    background: $home-grey;
+
+    &__wrap {
+      @include home-wrap;
+    }
+
+    &__all {
+      @include home-pill;
+    }
+
+    &__grid {
+      list-style: none;
+      margin: 24px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 24px;
+
+      @include respond-to("sm") {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      @include respond-to("lg") {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      > li {
+        display: flex;
+      }
+    }
+  }
+</style>

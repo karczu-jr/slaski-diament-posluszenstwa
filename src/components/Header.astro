@@ -92,7 +92,7 @@ const isHome = pathname === "/";
 
   .header {
     position: fixed;
-    top: 0;
+    top: var(--header-top, 0px); // pod paskiem ogłoszeń, dopóki jest widoczny
     left: 0;
     width: 100%;
     z-index: 50;
@@ -104,6 +104,7 @@ const isHome = pathname === "/";
     // Stan początkowy: część strony nad hero (przewija się), bez tła, ramki i logo
     &--home:not(.is-docked) {
       position: absolute;
+      top: var(--announce-h, 0px);
       background-color: transparent;
       backdrop-filter: none;
       border-bottom-color: transparent;

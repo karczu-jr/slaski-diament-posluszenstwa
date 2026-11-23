@@ -1,0 +1,224 @@
+---
+// src/components/home/HomeEditions.astro
+// Edycje zawodów na granatowym tle: karta następnej edycji + 2 ostatnie edycje.
+// Dane z src/content/projects/*.mdx – nowa edycja = nowy plik .mdx.
+import { Image } from "astro:assets";
+import SectionHead from "./SectionHead.astro";
+import { getEditions, formatShortDate } from "../../data/editions";
+
+const { past, next, nextTitle, nextWhen } = await getEditions();
+const recent = past.slice(0, 2);
+---
+
+<section class="editions" aria-labelledby="editions-title">
+  <div class="editions__wrap">
+    <SectionHead eyebrow="🏁 Zawody" title="Edycje zawodów Obedience" id="editions-title" dark>
+      <a slot="action" href="/projects" class="editions__all">Wszystkie edycje <span class="nudge" aria-hidden="true">👉</span></a>
+    </SectionHead>
+
+    <ul class="editions__grid">
+      <li class="editions__next">
+        <svg class="editions__diamond" viewBox="0 0 64 56" fill="none" aria-hidden="true">
+          <path d="M24 18 32 4l8 14Z" fill="rgba(242,194,48,.25)"></path>
+          <path d="M16 4h32l14 14-30 34L2 18 16 4Z"></path>
+          <path d="M2 18h60M16 4l8 14 8-14 8 14 8-14M24 18l8 34 8-34"></path>
+        </svg>
+        <h3 class="editions__title editions__title--light">{nextTitle}</h3>
+        <p class="editions__next-text">
+          {nextWhen ? `Planowana: ${nextWhen}.` : "Termin ogłosimy wkrótce."}
+        </p>
+        {
+          next ? (
+            <a href={`/projects/${next.id}`} class="editions__next-btn">Szczegóły <span class="nudge" aria-hidden="true">👉</span></a>
+          ) : (
+            <a href="#powiadom" class="editions__next-btn">🔔 Powiadom mnie</a>
+          )
+        }
+      </li>
+
+      {
+        recent.map((e) => (
+          <li>
+            <a href={`/projects/${e.id}`} class="editions__card">
+              {e.data.image && (
+                <Image
+                  src={e.data.image.url}
+                  alt=""
+                  widths={[400, 600, 800]}
+                  sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
+                  class="editions__img"
+                  loading="lazy"
+                />
+              )}
+              <span class="editions__body">
+                <span class="editions__meta">
+                  {[formatShortDate(e.data.date), e.data.location].filter(Boolean).join(" · ")}
+                </span>
+                <h3 class="editions__title">{e.data.title}</h3>
+                {e.data.description && <span class="editions__desc">{e.data.description}</span>}
+                <span class="editions__more">Zobacz edycję <span class="nudge" aria-hidden="true">👉</span></span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
+
+  .editions {
+    background: $color-primary;
+
+    &__wrap {
+      @include home-wrap;
+    }
+
+    &__all {
+      @include home-pill;
+      border-color: #ffffff;
+      color: #ffffff;
+
+      &:hover {
+        background: #ffffff;
+        color: $color-primary;
+      }
+    }
+
+    &__grid {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 24px;
+
+      @include respond-to("md") {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      @include respond-to("lg") {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      > li {
+        display: flex;
+      }
+    }
+
+    // Następna edycja – żółta przerywana ramka
+    &__next {
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 32px;
+      min-height: 320px;
+      border-radius: $home-radius;
+      border: 2px dashed $home-yellow;
+
+      @include respond-to("lg") {
+        min-height: 460px;
+      }
+    }
+
+    &__diamond {
+      width: 48px;
+
+      path {
+        stroke: $home-yellow;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+    }
+
+    &__next-text {
+      margin: 0;
+      font-size: 15px;
+      color: #c3cad8;
+    }
+
+    &__next-btn {
+      @include home-button-dark;
+      margin-top: 6px;
+      background: $home-yellow;
+      color: $color-primary;
+
+      &:hover {
+        background: #ffffff;
+        color: $color-primary;
+      }
+    }
+
+    // Karty przeszłych edycji
+    &__card {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      background: #ffffff;
+      border-radius: $home-radius;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      @include home-card-hover;
+    }
+
+    &__img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+    }
+
+    &__body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 24px 28px 28px;
+    }
+
+    &__meta {
+      font-family: $font-family-heading;
+      font-size: 13px;
+      color: $home-muted;
+    }
+
+    &__title {
+      @include heading-reset;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 28px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      color: $color-primary;
+
+      @include respond-to("lg") {
+        font-size: 32px;
+      }
+
+      &--light {
+        color: #ffffff;
+      }
+    }
+
+    &__desc {
+      font-size: 15px;
+      color: $home-text;
+    }
+
+    &__more {
+      margin-top: auto;
+      padding-top: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      color: $color-primary;
+      word-spacing: 0.14em;
+    }
+  }
+</style>

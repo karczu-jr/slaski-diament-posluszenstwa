@@ -1,0 +1,260 @@
+---
+// src/components/home/HomeHero.astro
+// Hero: 2/3 tekst (logo, opis, partnerzy) + 1/3 pionowa rolka 9:16.
+// Informacja o następnej edycji jest w pasku ogłoszeń nad menu (src/data/announcement.ts).
+// Klasa "hero" jest potrzebna skryptowi nagłówka (przyklejanie menu po przewinięciu).
+import fs from "node:fs";
+import path from "node:path";
+import { Image, getImage } from "astro:assets";
+import Logo from "../Logo.astro";
+import { HERO } from "../../data/home";
+import { sponsors } from "../../data/sponsors";
+const { reel } = HERO;
+
+// Wideo pojawia się dopiero, gdy plik leży w public/
+const hasVideo = fs.existsSync(path.join(process.cwd(), "public", reel.src));
+const poster = await getImage({ src: reel.poster, width: 1440, format: "webp" });
+---
+
+<section class="hero" aria-label="Wprowadzenie">
+  <div class="hero__text">
+    <h1 class="hero__title"><Logo variant="compact" size="clamp(1.6rem, 4.2vw, 2.5rem)" /></h1>
+    <p class="hero__eyebrow">{HERO.eyebrow}</p>
+    <p class="hero__lead">{HERO.lead}</p>
+
+    <a href="/about" class="hero__more">👋 Więcej o nas</a>
+
+    {
+      sponsors.length > 0 && (
+        <div class="hero__partners">
+          <p class="hero__partners-label">Partnerzy zawodów</p>
+          <ul class="hero__partners-list">
+            {sponsors.map((p) => (
+              <li>
+                {p.url ? (
+                  <a href={p.url} target="_blank" rel="noopener noreferrer">
+                    <Image src={p.logo} alt={p.alt ?? p.name} class="hero__partner-logo" height={96} />
+                    <span class="sr-only"> (otwiera się w nowej karcie)</span>
+                  </a>
+                ) : (
+                  <Image src={p.logo} alt={p.alt ?? p.name} class="hero__partner-logo" height={96} />
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  </div>
+
+  <div class="hero__media">
+    {
+      hasVideo ? (
+        <video
+          class="hero__video"
+          src={reel.src}
+          poster={poster.src}
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          aria-label={reel.posterAlt}
+          data-hero-video
+        />
+      ) : (
+        <Image
+          src={reel.poster}
+          alt={reel.posterAlt}
+          class="hero__video"
+          widths={[720, 1080, 1440, 2000]}
+          sizes="(min-width: 1024px) 1040px, 240vw"
+          loading="eager"
+        />
+      )
+    }
+    <span class="hero__credit">🎬 Rolka · {reel.credit}</span>
+    {
+      hasVideo && (
+        <button type="button" class="hero__pause" aria-label="Zatrzymaj wideo" data-hero-pause>
+          <span aria-hidden="true">❚❚</span>
+        </button>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  const video = document.querySelector<HTMLVideoElement>("[data-hero-video]");
+  const btn = document.querySelector<HTMLButtonElement>("[data-hero-pause]");
+  if (video && btn) {
+    const sync = () => {
+      const paused = video.paused;
+      btn.setAttribute("aria-label", paused ? "Odtwórz wideo" : "Zatrzymaj wideo");
+      btn.innerHTML = `<span aria-hidden="true">${paused ? "▶" : "❚❚"}</span>`;
+    };
+    // Osoby z wyłączonymi animacjami nie dostają autoodtwarzania
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) video.pause();
+    btn.addEventListener("click", () => (video.paused ? video.play() : video.pause()));
+    video.addEventListener("play", sync);
+    video.addEventListener("pause", sync);
+    sync();
+  }
+</script>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
+
+  .hero {
+    max-width: 1280px;
+    margin: 0 auto;
+    // górny odstęp = miejsce na menu, które leży nad hero
+    padding: 112px 24px 72px;
+    display: grid;
+    gap: 48px;
+    align-items: center;
+
+    @include respond-to("lg") {
+      grid-template-columns: 2fr 1fr;
+      gap: 72px;
+      padding: 128px 24px 96px;
+    }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 24px;
+
+      @include respond-to("md") {
+        gap: 28px;
+      }
+    }
+
+    &__title {
+      @include heading-reset;
+      line-height: 1;
+    }
+
+    &__eyebrow {
+      margin: 0;
+      font-family: $font-family-heading;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: $color-accent;
+    }
+
+    &__lead {
+      margin: 0;
+      max-width: 520px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #3f3f46;
+
+      @include respond-to("md") {
+        font-size: 20px;
+      }
+    }
+
+
+    &__more {
+      @include home-pill;
+      padding: 13px 28px;
+    }
+
+    &__partners {
+      align-self: stretch;
+      max-width: 520px;
+      padding-top: 24px;
+      border-top: 1px solid $home-line;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    &__partners-label {
+      margin: 0;
+      font-family: $font-family-heading;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: $home-muted;
+    }
+
+    &__partners-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 20px 40px;
+
+      a {
+        display: block;
+      }
+    }
+
+    &__partner-logo {
+      display: block;
+      height: 56px;
+      width: auto;
+    }
+
+    // Rolka: pionowa karta 9:16, nic nie jest ucinane
+    &__media {
+      position: relative;
+      justify-self: center;
+      width: 100%;
+      max-width: 360px;
+      aspect-ratio: 9 / 16;
+      border-radius: 28px;
+      overflow: hidden;
+      background: #1e293b;
+      box-shadow: 0 30px 60px -30px rgba(15, 23, 42, 0.45);
+
+      @include respond-to("lg") {
+        max-width: none;
+      }
+    }
+
+    &__video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 55% 50%;
+    }
+
+    &__credit {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      font-family: $font-family-heading;
+      font-size: 12px;
+      color: #ffffff;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+
+    &__pause {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      border: 0;
+      background: rgba(255, 255, 255, 0.92);
+      color: $color-primary;
+      font-size: 15px;
+      cursor: pointer;
+    }
+  }
+</style>

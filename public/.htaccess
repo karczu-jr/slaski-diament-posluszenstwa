@@ -1,0 +1,26 @@
+# Konfiguracja serwera Apache (Hostinger). Plik trafia do public_html razem ze stroną.
+
+RewriteEngine On
+
+# Zawsze HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Bez "www"
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
+# Druga domena przekierowuje na główną – odkomentuj po zakupie domen
+# (wpisz właściwe adresy: druga domena w RewriteCond, główna w RewriteRule).
+# RewriteCond %{HTTP_HOST} ^sdp\.pl$ [NC]
+# RewriteRule ^ https://slaskidiamentposluszenstwa.pl%{REQUEST_URI} [L,R=301]
+
+# Własna strona błędu 404
+ErrorDocument 404 /404.html
+
+# Strony HTML zawsze świeże (długie trzymanie plików z /_astro/ ustawia public/_astro/.htaccess)
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

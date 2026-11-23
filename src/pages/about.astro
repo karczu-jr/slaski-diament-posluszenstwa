@@ -1,30 +1,663 @@
 ---
 // src/pages/about.astro
-import AboutMe from "../components/About.astro";
+// Strona "O nas" (wersja 5): organizatorzy, historia z liczbami, wyróżniki,
+// szkoła Ułóż Psa, partnerzy i kontakt.
+// Treści: src/data/home.ts (TEAM, STORY, STATS), src/data/about.ts, src/data/sponsors.ts.
+import { Image } from "astro:assets";
 import Layout from "../layouts/Layout.astro";
-import { ABOUT } from "../consts";
+import { ABOUT, SITE } from "../consts";
+import { TEAM, STORY, STATS } from "../data/home";
+import { PEOPLE_EXTRA, VALUES, SCHOOL } from "../data/about";
+import { sponsors } from "../data/sponsors";
+import { getEditions } from "../data/editions";
+import logoUlozPsa from "../assets/img/partners/ulozpsa_logo.svg";
+
+const { past } = await getEditions();
+const stats = [
+  { value: String(past.length), label: past.length === 1 ? "edycja za nami 🏁" : "edycje za nami 🏁" },
+  ...STATS,
+];
+
+// Pierwsze zdanie historii idzie do nagłówka, reszta do sekcji "Nasza historia"
+const [intro, ...story] = STORY;
 ---
 
 <Layout title={ABOUT.TITLE} description={ABOUT.DESCRIPTION}>
   <div class="about-page">
-    <div class="about-page__container">
-      <AboutMe />
-    </div>
+    <!-- organizatorzy -->
+    <section class="about-page__hero" aria-labelledby="about-title">
+      <p class="about-page__eyebrow">👋 O nas</p>
+      <h1 id="about-title" class="about-page__title">Poznaj organizatorów</h1>
+      <p class="about-page__lead">{intro}</p>
+
+      <div class="about-page__people">
+        {
+          TEAM.map((person, i) => {
+            const extra = PEOPLE_EXTRA[person.name];
+            return (
+              <article class="about-page__person">
+                {person.photo ? (
+                  <Image
+                    src={person.photo}
+                    alt={person.photoAlt ?? person.name}
+                    widths={[480, 720, 960, 1200]}
+                    sizes="(min-width: 1280px) 604px, (min-width: 768px) 50vw, 100vw"
+                    class="about-page__photo"
+                    style={person.photoPosition ? `object-position: ${person.photoPosition}` : undefined}
+                    loading={i < 2 ? "eager" : "lazy"}
+                  />
+                ) : (
+                  <span class="about-page__photo about-page__photo--empty" aria-hidden="true">
+                    📷
+                  </span>
+                )}
+                <div class="about-page__person-body">
+                  <h2 class="about-page__name">{person.name}</h2>
+                  {extra?.chips.length && (
+                    <ul class="about-page__chips" role="list">
+                      {extra.chips.map((c) => (
+                        <li>{c}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {extra?.bio && <p class="about-page__bio">{extra.bio}</p>}
+                </div>
+              </article>
+            );
+          })
+        }
+      </div>
+    </section>
+
+    <!-- historia + liczby -->
+    <section class="about-page__story" aria-labelledby="story-title">
+      <div class="about-page__wrap about-page__story-grid">
+        <div>
+          <p class="about-page__eyebrow">💎 Nasza historia</p>
+          <h2 id="story-title" class="about-page__h2">Dlaczego robimy te zawody</h2>
+        </div>
+        <div>
+          {story.map((p) => <p class="about-page__story-text">{p}</p>)}
+          <dl class="about-page__stats">
+            {
+              stats.map((s) => (
+                <div class="about-page__stat">
+                  <dt class="about-page__stat-label">{s.label}</dt>
+                  <dd class="about-page__stat-value">{s.value}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- co nas wyróżnia -->
+    <section class="about-page__values" aria-labelledby="values-title">
+      <div class="about-page__wrap">
+        <p class="about-page__eyebrow">✨ Co nas wyróżnia</p>
+        <h2 id="values-title" class="about-page__h2">Dlaczego warto u nas startować</h2>
+        <ul class="about-page__values-grid" role="list">
+          {
+            VALUES.map((v) => (
+              <li class="about-page__value">
+                <span class="about-page__value-emoji" aria-hidden="true">
+                  {v.emoji}
+                </span>
+                <h3 class="about-page__value-title">{v.title}</h3>
+                <p class="about-page__value-text">{v.text}</p>
+              </li>
+            ))
+          }
+          <li class="about-page__value-cta-wrap">
+            <a href="/projects" class="about-page__value-cta">
+              <span class="about-page__value-emoji" aria-hidden="true">🐾</span>
+              <span>Zobacz edycje zawodów <span class="nudge" aria-hidden="true">👉</span></span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- szkoła -->
+    <section class="about-page__school" aria-labelledby="school-title">
+      <div class="about-page__wrap about-page__school-grid">
+        <div>
+          <p class="about-page__eyebrow about-page__eyebrow--light">🐾 Nasza szkoła</p>
+          <h2 id="school-title" class="about-page__h2 about-page__h2--light">Reprezentujemy {SCHOOL.name}</h2>
+          <p class="about-page__school-text">{SCHOOL.text}</p>
+          <a href={SCHOOL.url} class="about-page__school-btn" target="_blank" rel="noopener noreferrer">
+            {SCHOOL.linkText} <span class="nudge" aria-hidden="true">👉</span>
+            <span class="sr-only"> (otwiera się w nowej karcie)</span>
+          </a>
+        </div>
+        <div class="about-page__school-logo">
+          <Image src={logoUlozPsa} alt="Ułóż Psa – szkolenie psów i Obedience" class="about-page__school-img" />
+        </div>
+      </div>
+    </section>
+
+    <!-- partnerzy -->
+    {
+      sponsors.length > 0 && (
+        <section class="about-page__partners" aria-labelledby="partners-title">
+          <div class="about-page__wrap about-page__wrap--tight">
+            <p class="about-page__eyebrow">🤝 Partnerzy</p>
+            <h2 id="partners-title" class="about-page__h2">Wspierają nas</h2>
+            <ul class="about-page__partners-grid" role="list">
+              {sponsors.map((p) => {
+                const logo = (
+                  <Image src={p.logo} alt={p.alt ?? p.name} height={144} class="about-page__partner-img" />
+                );
+                return (
+                  <li>
+                    {p.url ? (
+                      <a href={p.url} class="about-page__partner" target="_blank" rel="noopener noreferrer">
+                        {logo}
+                        <span class="sr-only"> (otwiera się w nowej karcie)</span>
+                      </a>
+                    ) : (
+                      <span class="about-page__partner">{logo}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- kontakt -->
+    <section class="about-page__contact" aria-labelledby="contact-title">
+      <div class="about-page__wrap">
+        <div class="about-page__contact-card">
+          <h2 id="contact-title" class="about-page__contact-title">Masz pytanie? Napisz do nas ✉️</h2>
+          <div class="about-page__contact-body">
+            <p class="about-page__contact-text">O zapisy, klasy, regulamin albo dojazd – chętnie pomożemy.</p>
+            <a href={`mailto:${SITE.EMAIL}`} class="about-page__contact-mail">{SITE.EMAIL}</a>
+            <a href="/contact" class="about-page__contact-btn">
+              Formularz kontaktowy <span class="nudge" aria-hidden="true">👉</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </Layout>
 
 <style lang="scss">
   @use "../styles/variables" as *;
   @use "../styles/mixins" as *;
+  @use "../styles/home" as *;
 
   .about-page {
-    padding-top: 4.5rem;
-    padding-bottom: 4.5rem;
+    background: #ffffff;
+    font-size: 17px;
+    line-height: 1.6;
+    color: $home-text;
 
-    &__container {
+    &__wrap {
+      @include home-wrap;
+
+      &--tight {
+        @include respond-to("lg") {
+          padding-top: 96px;
+          padding-bottom: 96px;
+        }
+      }
+    }
+
+    &__eyebrow {
+      @include home-eyebrow;
+
+      &--light {
+        color: #aab4c8;
+      }
+    }
+
+    &__h2 {
+      @include home-h2;
+      margin-bottom: 40px;
+
+      &--light {
+        color: #ffffff;
+      }
+    }
+
+    // ---------- organizatorzy ----------
+    &__hero {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 0 1.5rem;
+      padding: 120px 24px 72px;
+
+      @include respond-to("md") {
+        padding: 144px 24px 96px;
+      }
+
+      @include respond-to("lg") {
+        padding-bottom: 112px;
+      }
+    }
+
+    &__title {
+      @include home-h2;
+      font-weight: 600;
+      font-size: 40px;
+      line-height: 1.05;
+
+      @include respond-to("md") {
+        font-size: 64px;
+      }
+    }
+
+    &__lead {
+      margin: 20px 0 0;
+      max-width: 680px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #3f3f46;
+
+      @include respond-to("md") {
+        font-size: 20px;
+      }
+    }
+
+    &__people {
+      display: grid;
+      gap: 24px;
+      margin-top: 40px;
+
+      @include respond-to("md") {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 56px;
+      }
+    }
+
+    &__person {
+      display: flex;
+      flex-direction: column;
+      background: $home-grey;
+      border-radius: 28px;
+      overflow: hidden;
+    }
+
+    &__photo {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+
+      &--empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        background: $home-line;
+      }
+    }
+
+    &__person-body {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 24px;
+
+      @include respond-to("md") {
+        padding: 32px;
+      }
+    }
+
+    &__name {
+      @include heading-reset;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 30px;
+      line-height: 1.1;
+      color: $color-primary;
+
+      @include respond-to("md") {
+        font-size: 36px;
+      }
+    }
+
+    &__chips {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      li {
+        font-size: 13px;
+        font-weight: 500;
+        color: $color-primary;
+        background: #ffffff;
+        padding: 4px 12px;
+        border-radius: 999px;
+        word-spacing: 0.14em;
+      }
+    }
+
+    &__bio {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    // ---------- historia ----------
+    &__story {
+      background: $home-grey;
+    }
+
+    &__story-grid {
+      display: grid;
+      gap: 8px;
+
+      @include respond-to("lg") {
+        grid-template-columns: 1fr 1.2fr;
+        gap: 80px;
+        align-items: start;
+      }
+    }
+
+    &__story-text {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #3f3f46;
+
+      @include respond-to("md") {
+        font-size: 20px;
+      }
+
+      & + & {
+        margin-top: 20px;
+      }
+    }
+
+    &__stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 40px 0 0;
+      padding-top: 32px;
+      border-top: 1px solid #dcdcda;
+    }
+
+    &__stat {
+      display: flex;
+      flex-direction: column-reverse;
+      justify-content: flex-end;
+    }
+
+    &__stat-label {
+      margin-top: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      color: $color-primary;
+      word-spacing: 0.14em;
+    }
+
+    &__stat-value {
+      margin: 0;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 44px;
+      line-height: 1;
+      color: $color-primary;
+
+      @include respond-to("md") {
+        font-size: 64px;
+      }
+    }
+
+    // ---------- wyróżniki ----------
+    &__values-grid {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 32px;
+
+      @include respond-to("sm") {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 40px 32px;
+      }
+
+      @include respond-to("lg") {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    &__value {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 20px;
+      border-top: 1px solid #dcdcda; // ta sama szara linia co nad liczbami
+    }
+
+    &__value-emoji {
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    &__value-title {
+      @include heading-reset;
+      margin-top: 4px;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 20px;
+      color: $color-primary;
+    }
+
+    &__value-text {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    &__value-cta-wrap {
+      display: flex;
+    }
+
+    &__value-cta {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+      min-height: 170px;
+      padding: 24px;
+      border: 2px solid $color-accent;
+      border-radius: $home-radius;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 20px;
+      line-height: 1.3;
+      color: $color-primary;
+      text-decoration: none;
+      transition: background $transition-base;
+
+      &:hover {
+        background: $home-accent-soft;
+        color: $color-primary;
+      }
+    }
+
+    // ---------- szkoła ----------
+    &__school {
+      background: $color-primary;
+    }
+
+    &__school-grid {
+      display: grid;
+      gap: 40px;
+      align-items: center;
+
+      @include respond-to("lg") {
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+      }
+    }
+
+    &__school .about-page__h2 {
+      margin-bottom: 0;
+    }
+
+    &__school-text {
+      margin: 20px 0 0;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #c3cad8;
+
+      @include respond-to("md") {
+        font-size: 20px;
+      }
+    }
+
+    &__school-btn {
+      @include home-button-dark;
+      margin-top: 32px;
+      padding: 13px 24px;
+      background: $home-yellow;
+      color: $color-primary;
+
+      &:hover {
+        background: #ffffff;
+        color: $color-primary;
+      }
+    }
+
+    &__school-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      background: #ffffff;
+      border-radius: 28px;
+
+      @include respond-to("lg") {
+        height: 280px;
+      }
+    }
+
+    &__school-img {
+      width: auto;
+      height: 72px;
+
+      @include respond-to("lg") {
+        height: 96px;
+      }
+    }
+
+    // ---------- partnerzy ----------
+    &__partners {
+      background: $home-grey;
+
+      .about-page__h2 {
+        margin-bottom: 36px;
+      }
+    }
+
+    &__partners-grid {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 16px;
+
+      @include respond-to("md") {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      > li {
+        display: flex;
+      }
+    }
+
+    &__partner {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 140px;
+      padding: 24px;
+      background: #ffffff;
+      border-radius: 20px;
+      @include home-card-hover;
+    }
+
+    &__partner-img {
+      width: auto;
+      max-width: 100%;
+      height: auto;
+      max-height: 72px;
+      object-fit: contain;
+    }
+
+    // ---------- kontakt ----------
+    &__contact-card {
+      display: grid;
+      gap: 24px 64px;
+      align-items: center;
+      padding: 32px 24px;
+      background: $home-grey;
+      border-radius: 28px;
+
+      @include respond-to("md") {
+        padding: 56px;
+      }
+
+      @include respond-to("lg") {
+        grid-template-columns: 1fr 1fr;
+        padding: 72px;
+      }
+    }
+
+    &__contact-title {
+      @include home-h2;
+      font-weight: 600;
+
+      @include respond-to("lg") {
+        font-size: 52px;
+      }
+    }
+
+    &__contact-body {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    &__contact-text {
+      margin: 0;
+    }
+
+    &__contact-mail {
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 22px;
+      color: $color-primary;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+      overflow-wrap: anywhere;
+
+      @include respond-to("md") {
+        font-size: 28px;
+      }
+
+      &:hover {
+        color: $color-accent;
+      }
+    }
+
+    &__contact-btn {
+      @include home-pill;
+      padding: 13px 24px;
     }
   }
 </style>

@@ -1,0 +1,171 @@
+---
+// src/components/home/HomeSignup.astro
+// "Nie przegap zapisów" – biała karta na szarym tle z polem e-mail.
+// Adres formularza Brevo ustawiamy w src/data/home.ts (SIGNUP.action).
+import { SIGNUP } from "../../data/home";
+
+interface Props {
+  /** "grey" – szare tło i biała karta (domyślnie); "white" – odwrotnie, gdy sekcja wyżej jest szara */
+  tone?: "grey" | "white";
+}
+const { tone = "grey" } = Astro.props;
+const connected = SIGNUP.action !== "";
+---
+
+<section class:list={["signup", `signup--${tone}`]} id="powiadom" aria-labelledby="signup-title">
+  <div class="signup__wrap">
+    <div class="signup__card">
+      <h2 id="signup-title" class="signup__title">Nie przegap zapisów <span aria-hidden="true">🔔</span></h2>
+
+      <form
+        class="signup__form"
+        method="post"
+        action={connected ? SIGNUP.action : undefined}
+        data-signup={connected ? undefined : "offline"}
+      >
+        <label for="signup-email" class="signup__label">Adres e-mail</label>
+        <div class="signup__row">
+          <input
+            id="signup-email"
+            name="EMAIL"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="ty@przyklad.pl"
+            class="signup__input"
+          />
+          <button type="submit" class="signup__btn"><span class="nudge" aria-hidden="true">👉</span> Zapisuję się</button>
+        </div>
+        <p class="signup__note">
+          Wyślemy jednego maila, gdy ruszą zapisy. Wypiszesz się jednym kliknięciem.{" "}
+          <a href={SIGNUP.privacyUrl}>Polityka prywatności</a>
+        </p>
+        <p class="signup__status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Dopóki formularz nie jest podłączony do Brevo – nic nie wysyłamy, tylko informujemy
+  const form = document.querySelector<HTMLFormElement>('[data-signup="offline"]');
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const status = form.querySelector(".signup__status");
+    if (status) status.textContent = "Zapisy na powiadomienia uruchomimy wkrótce. Dziękujemy za cierpliwość!";
+  });
+</script>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
+
+  .signup {
+    background: $home-grey;
+    scroll-margin-top: 80px;
+
+    // Wariant odwrócony: białe tło, szara karta, białe pole e-mail
+    &--white {
+      background: #ffffff;
+    }
+
+    &--white &__card {
+      background: $home-grey;
+    }
+
+    &--white &__input {
+      background: #ffffff;
+    }
+
+    &__wrap {
+      @include home-wrap;
+    }
+
+    &__card {
+      display: grid;
+      gap: 28px 64px;
+      align-items: center;
+      padding: 32px 24px;
+      border-radius: 28px;
+      background: #ffffff;
+
+      @include respond-to("md") {
+        padding: 56px;
+      }
+
+      @include respond-to("lg") {
+        grid-template-columns: 1fr 1fr;
+        padding: 72px;
+      }
+    }
+
+    &__title {
+      @include home-h2;
+      font-weight: 600;
+      font-size: 34px;
+
+      @include respond-to("md") {
+        font-size: 52px;
+      }
+    }
+
+    &__form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    &__label {
+      font-size: 17px;
+      font-weight: 500;
+      color: $color-primary;
+    }
+
+    &__row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    &__input {
+      flex: 1 1 220px;
+      min-width: 0;
+      font: inherit;
+      font-size: 17px;
+      padding: 15px 24px;
+      border-radius: 999px;
+      border: 1px solid #dcdcda;
+      background: #f1f1ef;
+      color: $color-primary;
+    }
+
+    &__btn {
+      @include home-button-dark;
+      font-size: 17px;
+      padding: 15px 28px;
+    }
+
+    &__note {
+      margin: 4px 0 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: $home-muted;
+
+      a {
+        color: $color-primary;
+      }
+    }
+
+    &__status {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 500;
+      color: $color-accent;
+
+      &:empty {
+        display: none;
+      }
+    }
+  }
+</style>

@@ -1,7 +1,7 @@
 ---
 // src/components/About.astro
 import { Image } from 'astro:assets';
-import portraitImg from '../assets/img/portrait.webp';
+import portraitImg from '../assets/img/projects/sdp1/galeria/sdp1-marta-12.webp';
 import Tag from './Tag.astro';
 import PartnersMarquee from './PartnersMarquee.astro';
 import { sponsors } from '../data/sponsors';
@@ -56,6 +56,9 @@ const highlights = [
       </div>
     </div>
   </div>
+
+  <!-- Dodatkowa treść ze strony (np. Organizatorzy na "O nas") – przed sponsorami, żeby pasek został nad stopką -->
+  <slot />
 
   <!-- Stali sponsorzy (lista: src/data/sponsors.ts) – ta sama pozycja na stronie głównej i w "O nas" -->
   <div class="about__sponsors">

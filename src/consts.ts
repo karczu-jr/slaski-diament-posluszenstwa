@@ -1,9 +1,10 @@
 export const SITE = {
-  URL: "https://your_site.com",
+  // Adres strony – używany w linkach kanonicznych, mapie strony i podglądach przy udostępnianiu.
+  URL: "https://slaskidiamentposluszenstwa.pl",
   TITLE: "Śląski Diament Posłuszeństwa",
   DESCRIPTION:
     "Śląski Diament Posłuszeństwa – zawody Obedience na Śląsku. Terminy, zapisy, wyniki i aktualności.",
-  EMAIL: "hi@monolume.com",
+  EMAIL: "zawody@sdp.pl",
 };
 
 export const BLOG = {
@@ -21,26 +22,21 @@ export const PROJECTS = {
 export const ABOUT = {
   TITLE: "O nas",
   DESCRIPTION:
-    "A personal blog about coding, building projects, and figuring things out",
+    "Kto organizuje Śląski Diament Posłuszeństwa – zawody Obedience na Śląsku dla klas 0–3.",
 };
 
 export const CONTACT = {
   TITLE: "Kontakt",
   DESCRIPTION:
-    "A personal blog about coding, building projects, and figuring things out",
+    "Napisz do organizatorów Śląskiego Diamentu Posłuszeństwa – pytania o zapisy, klasy i zawody Obedience.",
 };
 
-export const SOCIALS = [
-  {
-    NAME: "X",
-    HREF: "https://x.com/your_username",
-  },
-  {
-    NAME: "Facebook",
-    HREF: "https://linkedin.com/",
-  },
-  {
-    NAME: "Instagram",
-    HREF: "https://github.com/your_username",
-  },
-];
+// Profile w mediach społecznościowych – pokazują się w stopce.
+// Dodaj prawdziwe adresy, np. { NAME: "Facebook", HREF: "https://www.facebook.com/..." }
+export const SOCIALS: { NAME: string; HREF: string }[] = [];
+
+// Google Analytics 4 – identyfikator usługi w postaci "G-XXXXXXXXXX" (Analytics → Administracja → Strumienie danych).
+// Pusty = brak analityki i brak banera cookies. Po wpisaniu: baner zgody (TermsFeed) i GA4 dopiero po akceptacji.
+export const ANALYTICS = {
+  GA_ID: "G-N2Y2HYH88Z",
+};

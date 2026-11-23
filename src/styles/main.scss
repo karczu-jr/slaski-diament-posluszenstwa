@@ -56,3 +56,68 @@ body {
     }
   }
 }
+
+// Strzałka 👉 w linkach przesuwa się w prawo po najechaniu (link, przycisk albo cała karta)
+.nudge {
+  display: inline-block;
+  transition: transform $transition-base;
+}
+
+a:hover .nudge,
+a:focus-visible .nudge,
+button:hover .nudge,
+[data-forward-hover]:hover .nudge {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nudge {
+    transition: none;
+  }
+
+  a:hover .nudge,
+  a:focus-visible .nudge,
+  button:hover .nudge,
+  [data-forward-hover]:hover .nudge {
+    transform: none;
+  }
+}
+
+// ---------- Płynny ruch ----------
+// Kotwice (#wyniki, #powiadom…) zjeżdżają płynnie, a przejście między stronami lekko się przenika.
+// Kto w systemie wyłączył animacje (prefers-reduced-motion), ma skoki bez animacji.
+// Miejsce na przyklejone menu przy skoku do kotwicy (sekcje mogą ustawić własne scroll-margin-top)
+[id] {
+  scroll-margin-top: 96px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.25s;
+  }
+
+  // Pojawianie się treści przy przewijaniu – klasy nadaje skrypt w Layout.astro.
+  // Bez JavaScriptu nic nie jest ukryte.
+  .reveal-ready [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.7s ease,
+      transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .reveal-ready [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}

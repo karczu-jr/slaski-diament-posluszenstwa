@@ -1,0 +1,135 @@
+---
+// src/components/CookieConsent.astro
+// Baner zgody na cookies (TermsFeed 4.2.0 – ten sam co na ulozpsa.pl i itmapp) + Google Analytics 4.
+// GA4 ładuje się WYŁĄCZNIE po zgodzie na kategorię "tracking" (skrypty type="text/plain").
+// Bez ANALYTICS.GA_ID nic się nie renderuje – strona nie ma wtedy cookies poza niezbędnymi.
+import { ANALYTICS, SITE } from "../consts";
+
+const id = ANALYTICS.GA_ID;
+const config = {
+  notice_banner_type: "simple",
+  consent_type: "express",
+  palette: "light",
+  language: "pl",
+  page_load_consent_levels: ["strictly-necessary"],
+  notice_banner_reject_button_hide: false,
+  preferences_center_close_button_hide: false,
+  page_refresh_confirmation_buttons: false,
+  website_name: SITE.TITLE,
+  website_privacy_policy_url: "/polityka-prywatnosci",
+};
+---
+
+{
+  id && (
+    <>
+      <script is:inline src="https://www.termsfeed.com/public/cookie-consent/4.2.0/cookie-consent.js" charset="UTF-8"></script>
+      <script is:inline define:vars={{ config }}>
+        document.addEventListener("DOMContentLoaded", () => window.cookieconsent?.run(config));
+      </script>
+
+      <script is:inline type="text/plain" data-cookie-consent="tracking" async src={`https://www.googletagmanager.com/gtag/js?id=${id}`}></script>
+      <script is:inline type="text/plain" data-cookie-consent="tracking" set:html={`
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '${id}');
+      `}></script>
+    </>
+  )
+}
+
+<style lang="scss" is:global>
+  // Selektory z "div...palette-light...nb" – mocniejsze niż style TermsFeed wstrzykiwane po naszych.
+  // Nadpisanie wyglądu banera TermsFeed – kolory i kroje SDP (jak cookies.css w itmapp)
+  @use "../styles/variables" as *;
+
+  div.termsfeed-com---nb-simple {
+    max-width: 560px;
+    right: 24px;
+    bottom: 24px;
+    border-radius: 24px;
+    overflow: hidden;
+
+    @media (max-width: 640px) {
+      max-width: none;
+      right: 0;
+      bottom: 0;
+      border-radius: 24px 24px 0 0;
+    }
+  }
+
+  div.termsfeed-com---palette-light.termsfeed-com---nb {
+    background: #ffffff;
+    color: #4a4a4a;
+    border: 1px solid #dcdcda;
+    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.16);
+  }
+
+  div.termsfeed-com---palette-light.termsfeed-com---nb .cc-nb-main-container {
+    padding: 28px;
+  }
+
+  div.termsfeed-com---palette-light.termsfeed-com---nb .cc-nb-title {
+    font-family: $font-family-heading;
+    font-size: 20px;
+    font-weight: 600;
+    color: $color-primary;
+  }
+
+  div.termsfeed-com---palette-light.termsfeed-com---nb .cc-nb-text {
+    font-family: $font-family-body;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #4a4a4a;
+  }
+
+  div.termsfeed-com---palette-light.termsfeed-com---nb .cc-nb-buttons-container button {
+    font-family: $font-family-body;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 11px 20px;
+    border-radius: 999px;
+    margin: 12px 8px 0 0;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  div.termsfeed-com---palette-light.termsfeed-com---nb .cc-nb-okagree {
+    background: $color-primary;
+    color: #ffffff;
+    border: 0;
+
+    &:hover {
+      background: $color-accent;
+    }
+  }
+
+  div.termsfeed-com---palette-light.termsfeed-com---nb .cc-nb-reject {
+    background: #ffffff;
+    color: $color-primary;
+    border: 1.5px solid $color-primary;
+
+    &:hover {
+      background: $color-primary;
+      color: #ffffff;
+    }
+  }
+
+  div.termsfeed-com---palette-light.termsfeed-com---nb .cc-nb-changep {
+    background: #f4f4f2;
+    color: $color-primary;
+    border: 0;
+  }
+
+  // Centrum preferencji
+  .termsfeed-com---pc-dialog {
+    font-family: $font-family-body;
+  }
+
+  .termsfeed-com---palette-light .cc-cp-foot-save {
+    background: $color-primary;
+    color: #ffffff;
+    border-radius: 999px;
+    font-family: $font-family-body;
+  }
+</style>

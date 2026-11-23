@@ -1,88 +1,22 @@
-# Monolume
+# Śląski Diament Posłuszeństwa
 
-Monolume is a clean, modern portfolio theme built with Astro.
-It’s designed for developers, designers, and freelancers who want to showcase their work with style
+Strona zawodów Obedience na Śląsku (klasy 0–3) – Astro + SCSS.
 
-## Demo
+## Uruchomienie
 
-[Live Preview](https://monolume.vercel.app)
-
-✨ Features
-
-- Minimal, bold typography
-- Responsive & mobile-friendly
-- Work/projects showcase layout
-- Blog support
-- Contact form
-- SEO-friendly
-- Built with Astro + Tailwind CSS (easy to customize)
-
-## Tech Stack
-
-- [Astro](https://astro.build/) – Static site builder
-- [TypeScript](https://www.typescriptlang.org/) – Type-safe development
-- [Tailwind CSS](https://tailwindcss.com/) – Utility-first styling
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-
-├── public/
-├── src/
-│   ├── components/
-    │   ├── About.astro
-│   │   ├── Card.astro
-│   │   ├── Contact.astro
-│   │   ├── Footer.astro
-│   │   ├── FormattedDate.astro
-│   │   ├── Head.astro
-│   │   ├── Header.astro
-│   │   ├── Hero.astro
-│   │   ├── Posts.astro
-│   │   └── Projects.astro
-│   ├── content/
-│   │   ├── blog/
-│   │   └── projects/
-│   ├── layouts/
-│   │   └── Layout.astro
-│   ├── pages/
-│   │   ├── 404.astro
-│   │   ├── about.astro
-│   │   ├── blog
-│   │   │   ├── [...id].astro
-│   │   │   └── index.astro
-│   │   ├── contact.astro
-│   │   ├── index.astro
-│   │   └── projects
-│   │       ├── [...id].astro
-│   │       └── index.astro
-│   └── styles/
-│       └── global.css
-    ├── consts.ts
-│   ├── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+```bash
+pnpm install
+pnpm dev        # serwer deweloperski
+pnpm build      # wersja produkcyjna do folderu dist/
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Gdzie co jest
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                | Action                                           |
-| :--------------------- | :----------------------------------------------- |
-| `pnpm install`         | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
-
-## ❤️ Like this theme?
-
-If you found this theme useful, check out more free and premium themes at  
-👉 https://themes.mhsh.in
+- `src/content/blog/*.mdx` – newsy (nowy wpis = nowy plik .mdx)
+- `src/content/projects/*.mdx` – edycje zawodów; zdjęcie z galerii z `home: true` trafia na stronę główną,
+  a pole `planned: "wiosna 2027"` oznacza planowaną edycję bez daty
+- `src/data/home.ts` – stałe treści strony głównej (hero, organizatorzy, liczby, formularz zapisów)
+- `src/data/sponsors.ts` – partnerzy pokazywani w hero
+- `src/consts.ts` – nazwa, adres strony, e-mail, media społecznościowe
+- `public/video/rolka.mp4` – pionowa rolka w hero (pojawia się automatycznie, gdy plik istnieje)
+- `scripts/optimize-images.mjs` – zmniejszanie zdjęć przed dodaniem (`pnpm optimize-images`)

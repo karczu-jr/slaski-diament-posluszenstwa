@@ -1,0 +1,88 @@
+---
+// src/layouts/LegalLayout.astro
+// Układ stron z dokumentami (np. polityka prywatności) pisanymi w .mdx.
+// Strona .mdx podaje w frontmatterze: title, description, updated (data ostatniej zmiany).
+import Layout from "./Layout.astro";
+
+const { frontmatter } = Astro.props;
+const { title, description, updated } = frontmatter;
+---
+
+<Layout title={title} description={description}>
+  <article class="legal">
+    <header class="legal__header">
+      <p class="legal__eyebrow">📄 Dokumenty</p>
+      <h1 class="legal__title">{title}</h1>
+      {updated && <p class="legal__meta">Ostatnia aktualizacja: {updated}</p>}
+    </header>
+    <div class="legal__content">
+      <slot />
+    </div>
+  </article>
+</Layout>
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+  @use "../styles/home" as *;
+  @use "../styles/prose" as *;
+
+  .legal {
+    background: #ffffff;
+    font-size: 17px;
+    line-height: 1.6;
+    color: $home-text;
+    padding-bottom: 96px;
+
+    &__header,
+    &__content {
+      max-width: 832px;
+      margin: 0 auto;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    &__header {
+      padding-top: 120px;
+      padding-bottom: 40px;
+
+      @include respond-to("md") {
+        padding-top: 144px;
+      }
+    }
+
+    &__eyebrow {
+      @include home-eyebrow;
+    }
+
+    &__title {
+      @include home-h2;
+      font-weight: 600;
+      font-size: 36px;
+
+      @include respond-to("md") {
+        font-size: 52px;
+      }
+    }
+
+    &__meta {
+      margin: 16px 0 0;
+      font-size: 15px;
+      color: $home-muted;
+    }
+
+    &__content {
+      @include prose;
+
+      :global(h2) {
+        margin: 2em 0 0.6em;
+        font-size: 24px;
+      }
+
+      :global(p),
+      :global(li) {
+        line-height: 1.75;
+      }
+    }
+  }
+</style>

@@ -1,200 +1,223 @@
 ---
 // src/components/Footer.astro
-import { SITE, SOCIALS } from "../consts";
-import { getCollection, type CollectionEntry } from "astro:content";
+// Stopka (wersja 5): logo + hasło, trzy kolumny linków, pasek z prawami autorskimi.
+// Granatowe tło – kolor marki. Edycje w kolumnie "Zawody" biorą się z plików .mdx.
+import { ANALYTICS, SITE, SOCIALS } from "../consts";
 import Logo from "./Logo.astro";
+import { getEditions } from "../data/editions";
 
-const projects: CollectionEntry<"projects">[] = (
-  await getCollection("projects")
-).slice(0, 3);
-
+const { past } = await getEditions();
+const editions = past.slice(0, 3);
+const galleryEdition = past.find((e) => e.data.gallery?.length);
 const currentYear = new Date().getFullYear();
 ---
 
-<footer class="footer">
+<footer class="footer" id="kontakt">
   <div class="footer__container">
-    <div class="footer__hero">
-      <h2 class="footer__title"><Logo variant="compact" size="clamp(1.4rem, 4.5vw, 2.25rem)" inverted /></h2>
-      <blockquote class="footer__quote">
-        <p>Z miłości do Obedience ♥️</p>
-      </blockquote>
+    <div class="footer__brand">
+      <a href="/" class="footer__logo" aria-label={`${SITE.TITLE} – strona główna`}>
+        <Logo variant="compact" size="1rem" inverted />
+      </a>
+      <p class="footer__motto">Z miłości do Obedience ♥️</p>
     </div>
 
-    <div class="footer__grid">
-      <nav class="footer__column" aria-labelledby="footer-contact-heading">
-        <h3 id="footer-contact-heading" class="footer__heading">Kontakt</h3>
-        <ul class="footer__list">
-          <li class="footer__item">
-            <a href={`mailto:${SITE.EMAIL}`} class="footer__link">
-              {SITE.EMAIL}
-            </a>
-          </li>
-        </ul>
-      </nav>
+    <nav class="footer__column" aria-labelledby="footer-zawody">
+      <h2 id="footer-zawody" class="footer__heading">Zawody</h2>
+      <ul class="footer__list">
+        {
+          editions.map((e) => (
+            <li>
+              <a href={`/projects/${e.id}`} class="footer__link">{e.data.title}</a>
+            </li>
+          ))
+        }
+        <li><a href="/projects" class="footer__link">Wszystkie edycje</a></li>
+      </ul>
+    </nav>
 
-      <nav class="footer__column" aria-labelledby="footer-nav-heading">
-        <h3 id="footer-nav-heading" class="footer__heading">Nawigacja</h3>
-        <ul class="footer__list">
-          <li class="footer__item"><a href="/" class="footer__link">Home</a></li>
-          <li class="footer__item"><a href="/about" class="footer__link">O nas</a></li>
-          <li class="footer__item"><a href="/blog" class="footer__link">Newsy</a></li>
-          <li class="footer__item"><a href="/projects" class="footer__link">Zawody</a></li>
-          <li class="footer__item"><a href="/contact" class="footer__link">Kontakt</a></li>
-        </ul>
-      </nav>
+    <nav class="footer__column" aria-labelledby="footer-biezaco">
+      <h2 id="footer-biezaco" class="footer__heading">Na bieżąco</h2>
+      <ul class="footer__list">
+        <li><a href="/blog" class="footer__link">Newsy</a></li>
+        {
+          galleryEdition && (
+            <li>
+              <a href={`/projects/${galleryEdition.id}`} class="footer__link">Galeria</a>
+            </li>
+          )
+        }
+        {
+          SOCIALS.map((s) => (
+            <li>
+              <a href={s.HREF} class="footer__link" target="_blank" rel="noopener noreferrer">
+                {s.NAME}
+                <span class="sr-only"> (otwiera się w nowej karcie)</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
 
-      <nav class="footer__column" aria-labelledby="footer-socials-heading">
-        <h3 id="footer-socials-heading" class="footer__heading">Sociale</h3>
-        <ul class="footer__list">
-          {
-            SOCIALS.map((link) => (
-              <li class="footer__item">
-                <a href={link.HREF} class="footer__link" target="_blank" rel="noopener noreferrer">
-                  {link.NAME}
-                  <span class="sr-only"> (otwiera się w nowej karcie)</span>
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </nav>
-
-      <nav class="footer__column" aria-labelledby="footer-projects-heading">
-        <h3 id="footer-projects-heading" class="footer__heading">Ostatnie zawody</h3>
-        <ul class="footer__list">
-          {
-            projects.map((project) => (
-              <li class="footer__item">
-                <a href={`/projects/${project.id}`} class="footer__link">
-                  {project.data.title}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </nav>
-    </div>
+    <nav class="footer__column" aria-labelledby="footer-onas">
+      <h2 id="footer-onas" class="footer__heading">O nas</h2>
+      <ul class="footer__list">
+        <li><a href="/about" class="footer__link">Organizatorzy</a></li>
+        <li><a href="/contact" class="footer__link">Kontakt</a></li>
+        <li>
+          <a href={`mailto:${SITE.EMAIL}`} class="footer__link">
+            {/* długi adres łamie się po "@", a nie w połowie słowa */}
+            {SITE.EMAIL.split("@")[0]}@<wbr />{SITE.EMAIL.split("@")[1]}
+          </a>
+        </li>
+      </ul>
+    </nav>
 
     <div class="footer__bottom">
-      <p class="footer__copyright">
-        © {currentYear} {SITE.TITLE}
-      </p>
+      <p class="footer__copyright">© {currentYear} {SITE.TITLE}. Zdjęcia: Marta Wlazło.</p>
+      <ul class="footer__legal" role="list">
+        <li><a href="/polityka-prywatnosci" class="footer__legal-link">Polityka prywatności</a></li>
+        {
+          ANALYTICS.GA_ID && (
+            <li>
+              {/* id wymagane przez baner TermsFeed – otwiera ustawienia cookies */}
+              <a href="#" id="open_preferences_center" class="footer__legal-link">Ustawienia cookies</a>
+            </li>
+          )
+        }
+      </ul>
     </div>
   </div>
 </footer>
 
 <style lang="scss">
-  @use '../styles/variables' as *;
-  @use '../styles/mixins' as *;
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+  @use "../styles/home" as *;
 
   .footer {
-    background-color: $color-primary;
-    color: #ffffff;
-    border-top-left-radius: 2.5rem;
-    border-top-right-radius: 2.5rem;
-    padding: 2.5rem 1.5rem;
-
-    @include respond-to('lg') {
-      border-top-left-radius: 5rem;
-      border-top-right-radius: 5rem;
-      padding: 3.5rem 2.5rem;
-    }
+    background: $color-primary;
+    color: #c3cad8;
+    font-size: 15px;
+    line-height: 1.6;
 
     &__container {
       max-width: 1280px;
       margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 2.5rem;
-    }
-
-    &__hero {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1.5rem;
-
-      @include respond-to('lg') {
-        flex-direction: row;
-        gap: 2rem;
-        align-items: baseline;
-      }
-    }
-
-    // Logotyp w jasnej wersji (rozmiar ustawia komponent Logo)
-    &__title {
-      margin: 0;
-      line-height: 1;
-    }
-
-    &__quote {
-      font-size: 1.25rem;
-      line-height: 1.4;
-      max-width: 760px;
-      margin: 0;
-
-      @include respond-to('lg') {
-        font-size: 1.75rem;
-      }
-    }
-
-    &__grid {
+      padding: 56px 24px 32px;
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 2.5rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 40px 32px;
 
-      @include respond-to('sm') {
-        grid-template-columns: repeat(2, 1fr);
+      @include respond-to("md") {
+        padding: 64px 24px 32px;
       }
 
-      @include respond-to('lg') {
-        grid-template-columns: repeat(4, 1fr);
+      @include respond-to("lg") {
+        grid-template-columns: 1.4fr repeat(3, 1fr);
       }
+    }
+
+    &__brand {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      @include respond-to("lg") {
+        grid-column: auto;
+      }
+    }
+
+    &__logo {
+      display: inline-flex;
+      align-self: flex-start;
+      text-decoration: none;
+
+      &:focus-visible {
+        outline: 3px solid $color-accent;
+        outline-offset: 4px;
+        border-radius: 4px;
+      }
+    }
+
+    &__motto {
+      margin: 0;
+      color: #aab4c8;
     }
 
     &__heading {
-      font-size: 1.25rem;
+      @include heading-reset;
+      margin-bottom: 12px;
+      font-family: $font-family-body;
+      font-size: 13px;
       font-weight: 600;
-      margin-bottom: 0.75rem;
+      color: #ffffff;
     }
 
     &__list {
       list-style: none;
-      padding: 0;
       margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 10px;
     }
 
     &__link {
-      color: rgba(#ffffff, 0.8);
-      text-decoration: none;
-      transition: color $transition-base;
       display: inline-block;
       min-height: 24px;
+      color: #c3cad8;
+      text-decoration: none;
+      overflow-wrap: break-word;
+      transition: color $transition-base;
 
       &:hover {
-        color: $color-accent;
+        color: #ffffff;
         text-decoration: underline;
       }
 
       &:focus-visible {
         outline: 3px solid $color-accent;
         outline-offset: 3px;
-        border-radius: 0.25rem;
+        border-radius: 4px;
       }
     }
 
     &__bottom {
-      border-top: 1px solid rgba(#ffffff, 0.1);
-      padding-top: 1.5rem;
-      text-align: center;
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px 24px;
+      margin-top: 16px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 13px;
+      color: #8a93a6;
     }
 
     &__copyright {
-      font-size: 0.875rem;
-      opacity: 0.7;
+      margin: 0;
+    }
+
+    &__legal {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+    }
+
+    &__legal-link {
+      color: #8a93a6;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+
+      &:hover {
+        color: #ffffff;
+      }
     }
   }
 </style>

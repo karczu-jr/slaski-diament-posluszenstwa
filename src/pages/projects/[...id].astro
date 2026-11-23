@@ -1,233 +1,1120 @@
 ---
-// src/pages/projects/[...id].astro - WERSJA 1: Układ pionowy (Image -> Content -> Gallery)
-import ProseImage from "../../components/ProseImage.astro";
+// src/pages/projects/[...id].astro
+// Strona edycji zawodów (wersja 5).
+// Wszystko pochodzi z pliku .mdx edycji (src/content/projects): fakty, wyniki, harmonogram,
+// galeria i partnerzy to pola we frontmatterze; treść pliku pojawia się w sekcji "Informacje".
+// Kolejność sekcji: po zawodach wyniki na górze, przed zawodami – informacje i harmonogram.
 import Layout from "../../layouts/Layout.astro";
-import BackButton from "../../components/BackButton.astro";
-import ButtonPrimary from "../../components/ButtonPrimary.astro";
-import ButtonSecondary from "../../components/ButtonSecondary.astro";
-import PartnersMarquee from "@/components/PartnersMarquee.astro";
-import Gallery from "@/components/Gallery.astro";
+import ProseImage from "../../components/ProseImage.astro";
+import Gallery from "../../components/Gallery.astro";
+import HomeSignup from "../../components/home/HomeSignup.astro";
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
+import { getEditions, formatShortDate } from "../../data/editions";
 
 export async function getStaticPaths() {
-  const allProjects: CollectionEntry<"projects">[] = await getCollection("projects");
-
-  return allProjects.map((project) => ({
-    params: { id: project.id },
-    props: { project },
-  }));
+  const all: CollectionEntry<"projects">[] = await getCollection("projects");
+  return all.map((project) => ({ params: { id: project.id }, props: { project } }));
 }
 
 const { project } = Astro.props;
 const { Content } = await render(project);
+const d = project.data;
 
-const imageUrl = project.data.image?.url;
-const imageAlt = project.data.image?.alt || project.data.title;
+const isPast = !!d.date && d.date.valueOf() <= Date.now();
+const canRegister = !!d.formUrl && !!d.registrationOpen;
+const status = canRegister ? "📝 Zapisy otwarte" : isPast ? "✔ Zakończona" : "⏳ Nadchodząca";
+const hasBody = (project.body ?? "").trim().length > 0;
+
+const dateLong = d.date?.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" });
+const weekday = d.date?.toLocaleDateString("pl-PL", { weekday: "long" });
+
+const facts = [
+  { label: "📅 Data", value: dateLong ?? d.planned ?? "Termin wkrótce", sub: weekday },
+  d.location && { label: "📍 Miejsce", value: d.location, sub: d.venue },
+  d.classes && { label: "🐕 Klasy", value: d.classes, sub: d.slots ? `${d.slots} miejsc startowych` : undefined },
+  d.fee && { label: "💳 Opłata", value: d.fee, sub: "za start jednego zespołu" },
+].filter(Boolean) as { label: string; value: string; sub?: string }[];
+
+// Sekcje, które ta edycja faktycznie ma – w kolejności zależnej od tego, czy zawody już były
+type Key = "wyniki" | "informacje" | "harmonogram" | "galeria" | "partnerzy";
+const has: Record<Key, boolean> = {
+  wyniki: !!d.results?.length,
+  informacje: !!d.team?.length || !!d.location || hasBody,
+  harmonogram: !!d.schedule?.length,
+  galeria: !!d.gallery?.length,
+  partnerzy: !!d.partners?.length,
+};
+const order: Key[] = isPast
+  ? ["wyniki", "informacje", "harmonogram", "galeria", "partnerzy"]
+  : ["informacje", "harmonogram", "galeria", "partnerzy", "wyniki"];
+const sections = order.filter((k) => has[k]);
+const LABELS: Record<Key, string> = {
+  wyniki: "🏆 Wyniki",
+  informacje: "ℹ️ Informacje",
+  harmonogram: "⏱️ Harmonogram i listy startowe",
+  galeria: "📸 Galeria",
+  partnerzy: "🤝 Partnerzy",
+};
+// Tła na przemian: szare, białe, szare… (hero jest białe)
+const tone = (k: Key) => (sections.indexOf(k) % 2 === 0 ? "grey" : "white");
+const lastTone = sections.length ? tone(sections[sections.length - 1]) : "white";
+
+// Poprzednia / następna edycja (kolejność chronologiczna). Jeśli to najnowsza edycja,
+// a pliku kolejnej jeszcze nie ma – karta "III edycja · Powiadom mnie" prowadzi do zapisu na powiadomienia.
+const { past, next: upcoming, nextTitle } = await getEditions();
+const timeline = [...past].reverse().concat(upcoming ? [upcoming] : []);
+const pos = timeline.findIndex((e) => e.id === project.id);
+const prevEdition = pos > 0 ? timeline[pos - 1] : undefined;
+const nextEdition = pos >= 0 && pos < timeline.length - 1 ? timeline[pos + 1] : undefined;
+const showNextPlaceholder = !nextEdition && !upcoming && isPast;
+const metaOf = (e: CollectionEntry<"projects">) =>
+  [e.data.date ? formatShortDate(e.data.date) : e.data.planned, e.data.location].filter(Boolean).join(" · ") ||
+  "Szczegóły";
+// Pasek ma inne tło niż ostatnia sekcja, a formularz pod nim – znowu inne niż pasek
+const pagerTone = lastTone === "grey" ? "white" : "grey";
+const hasPager = !!prevEdition || !!nextEdition || showNextPlaceholder;
+const signupTone = hasPager ? lastTone : pagerTone;
+
+const MEDALS = ["🥇", "🥈", "🥉"];
+const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
 ---
 
-<Layout title={project.data.title} description={project.data.description}>
-  <div class="project-details">
-    <div class="project-details__back-wrapper">
-      <BackButton fallbackHref="/projects" />
-    </div>
+<Layout title={`${d.title} – zawody Obedience`} description={d.description ?? d.title} image={d.image?.url.src}>
+  <div class="edition">
+    <!-- HERO -->
+    <section class="edition__hero">
+      <a href="/projects" class="edition__back"><span class="edition__back-icon" aria-hidden="true">👈</span> Wszystkie edycje</a>
 
-    <header class="project-details__header">
-      <div class="project-details__header-info">
-        <!-- <h1 class="project-details__title">
-          {project.data.title}
-        </h1> -->
-        <h1>
-          Śląski Diament Posłuszeństwa<br><span>{project.data.title}</span>
-        </h1>
-        <p class="project-details__description">{project.data.description}</p>
-      </div>
+      <p class="edition__eyebrow">
+        <span>🏁 Zawody Obedience</span>
+        <span class="edition__status">{status}</span>
+      </p>
 
-      <div class="project-details__actions">
+      <div class="edition__title-row">
+        <h1 class="edition__title">{d.title}</h1>
         {
-          project.data.formUrl && (
-            <ButtonPrimary
-              href={project.data.formUrl}
-              icon="📝"
-              text="Zapisz się"
-              target="_blank"
-            />
-          )
-        }
-        {
-          project.data.facebookUrl && (
-            <ButtonSecondary
-              href={project.data.facebookUrl}
-              icon="🌐"
-              text="Facebook"
-              target="_blank"
-            />
+          (canRegister || d.facebookUrl) && (
+            <div class="edition__actions">
+              {canRegister && (
+                <a href={d.formUrl!} class="edition__btn" target="_blank" rel="noopener noreferrer">
+                  📝 Zapisz się<span class="sr-only"> (otwiera się w nowej karcie)</span>
+                </a>
+              )}
+              {d.facebookUrl && (
+                <a href={d.facebookUrl} class="edition__pill" target="_blank" rel="noopener noreferrer">
+                  Wydarzenie na Facebooku <span class="nudge" aria-hidden="true">👉</span>
+                  <span class="sr-only"> (otwiera się w nowej karcie)</span>
+                </a>
+              )}
+            </div>
           )
         }
       </div>
-    </header>
 
-    <div class="project-details__body">
-      {
-        imageUrl && (
-          <div class="project-details__main-image-wrapper">
-            <Image
-              src={imageUrl}
-              alt={imageAlt}
-              inferSize={true}
-              class="project-details__main-image"
-              loading="eager"
-            />
-          </div>
-        )
-      }
+      <div class="edition__hero-grid">
+        <div class="edition__hero-text">
+          {d.description && <p class="edition__lead">{d.description}</p>}
 
-      <article class="project-details__content">
-        <Content components={{ img: ProseImage }} />
-      </article>
-      {project.data.partners && <PartnersMarquee partners={project.data.partners} />}
-    </div>
+          <dl class="edition__facts">
+            {
+              facts.map((f) => (
+                <div class="edition__fact">
+                  <dt>{f.label}</dt>
+                  <dd>
+                    {f.value}
+                    {f.sub && <span>{f.sub}</span>}
+                  </dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
 
-    
+        {
+          d.image && (
+            <figure class="edition__poster">
+              <Image
+                src={d.image.url}
+                alt={d.image.alt}
+                widths={[480, 720, 1080, 1440]}
+                sizes="(min-width: 1024px) 480px, 100vw"
+                loading="eager"
+              />
+            </figure>
+          )
+        }
+      </div>
+    </section>
 
+    <!-- PRZYKLEJONY PASEK SEKCJI -->
     {
-      project.data.gallery && project.data.gallery.length > 0 && (
-        <div class="project-details__gallery">
-          <Gallery
-            images={project.data.gallery}
-            fallbackAlt={`Zdjęcie z zawodów – ${project.data.title}`}
-          />
+      sections.length > 1 && (
+        <div class="edition__subnav">
+          <nav aria-label="Sekcje edycji" data-subnav>
+            {sections.map((k) => (
+              <a href={`#${k}`}>{LABELS[k]}</a>
+            ))}
+          </nav>
         </div>
       )
     }
+
+    {
+      sections.map((k) => (
+        <section id={k} class:list={["edition__section", `edition__section--${tone(k)}`]} aria-labelledby={`${k}-title`}>
+          <div class="edition__wrap">
+            {k === "wyniki" && (
+              <>
+                <div class="edition__head">
+                  <p class="edition__kicker">🏆 Wyniki</p>
+                  <h2 id="wyniki-title" class="edition__h2">Podia we wszystkich klasach</h2>
+                  <p class="edition__sub">Gratulujemy wszystkim zespołom!</p>
+                </div>
+                <div class="edition__results">
+                  {d.results!.map((r) => (
+                    <article class="edition__class">
+                      {withPhotos && r.photo && (
+                        <Image
+                          src={r.photo}
+                          alt={`Podium – ${r.class}`}
+                          widths={[480, 720, 1080]}
+                          sizes="(min-width: 1024px) 600px, 100vw"
+                          class="edition__class-photo"
+                          loading="lazy"
+                        />
+                      )}
+                      <div class="edition__class-body">
+                        <h3 class="edition__h3">{r.class}</h3>
+                        <ol class="edition__entries">
+                          {r.entries.map((e, i) => (
+                            <li class:list={["edition__entry", { "edition__entry--podium": i < 3 && !e.note?.includes("nieobecn") || i < 3 && e.points }]}>
+                              <span class="edition__place" aria-label={e.points ? `${i + 1}. miejsce` : undefined}>
+                                {e.points ? (i < 3 ? MEDALS[i] : `${i + 1}.`) : "–"}
+                              </span>
+                              <span class="edition__team">
+                                <b>{e.handler}</b>
+                                <span>{e.dog}</span>
+                              </span>
+                              <span class="edition__score">
+                                {e.points && `${e.points} pkt`}
+                                {(e.grade || e.note) && <span>{e.points ? e.grade : e.note}</span>}
+                                {e.points && e.note && <span class="edition__note">{e.note}</span>}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {k === "informacje" && (
+              <>
+                <div class="edition__info">
+                  {d.team?.length && (
+                    <div>
+                      <p class="edition__kicker">ℹ️ Informacje</p>
+                      <h2 id="informacje-title" class="edition__h2">Zespół zawodów</h2>
+                      <dl class="edition__team-list">
+                        {d.team.map((t) => (
+                          <>
+                            <dt>{t.role}</dt>
+                            <dd>{t.name}</dd>
+                          </>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+                  {d.location && (
+                    <div>
+                      <p class="edition__kicker">📍 Dojazd</p>
+                      <h2 id={d.team?.length ? undefined : "informacje-title"} class="edition__h2">Miejsce zawodów</h2>
+                      <p class="edition__place-text">
+                        {d.location}
+                        {d.venue && `, ${d.venue}`}
+                      </p>
+                      {d.mapUrl && (
+                        <a href={d.mapUrl} class="edition__pill" target="_blank" rel="noopener noreferrer">
+                          Otwórz w Mapach Google <span class="nudge" aria-hidden="true">👉</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {hasBody && (
+                  <div class="edition__prose">
+                    <Content components={{ img: ProseImage }} />
+                  </div>
+                )}
+              </>
+            )}
+
+            {k === "harmonogram" && (
+              <>
+                <div class="edition__head">
+                  <p class="edition__kicker">⏱️ Harmonogram</p>
+                  <h2 id="harmonogram-title" class="edition__h2">Plan dnia i listy startowe</h2>
+                </div>
+                {d.scheduleNote && (
+                  <p class="edition__alert">
+                    <span aria-hidden="true">⚠️</span>
+                    <span>{d.scheduleNote}</span>
+                  </p>
+                )}
+                <ol class="edition__timeline">
+                  {d.schedule!.map((s) => (
+                    <li class="edition__slot">
+                      <span class="edition__time">{s.time}</span>
+                      <div>
+                        <h3 class="edition__h3">{s.title}</h3>
+                        {s.description && <p class="edition__slot-desc">{s.description}</p>}
+                        {s.startList?.length && (
+                          <details class="edition__details">
+                            <summary>
+                              Lista startowa ({s.startList.length}) <span aria-hidden="true">👇</span>
+                            </summary>
+                            <ol class="edition__startlist">
+                              {s.startList.map((n) => (
+                                <li>{n}</li>
+                              ))}
+                            </ol>
+                          </details>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+
+            {k === "galeria" && (
+              <>
+                <div class="edition__head">
+                  <p class="edition__kicker">📸 Galeria</p>
+                  <h2 id="galeria-title" class="edition__h2">Zdjęcia z ringu</h2>
+                  <p class="edition__sub">Kliknij zdjęcie, aby otworzyć je na pełnym ekranie.</p>
+                </div>
+                <Gallery images={d.gallery!} title="" fallbackAlt={`Zdjęcie z zawodów – ${d.title}`} />
+              </>
+            )}
+
+            {k === "partnerzy" && (
+              <>
+                <div class="edition__head">
+                  <p class="edition__kicker">🤝 Partnerzy</p>
+                  <h2 id="partnerzy-title" class="edition__h2">Dziękujemy za wsparcie</h2>
+                </div>
+                <ul class="edition__partners">
+                  {d.partners!.map((p) => (
+                    <li>
+                      {p.url ? (
+                        <a href={p.url} target="_blank" rel="noopener noreferrer" class="edition__partner">
+                          <Image src={p.logo} alt={p.alt ?? p.name} height={144} class="edition__partner-logo" />
+                          <span class="sr-only"> (otwiera się w nowej karcie)</span>
+                        </a>
+                      ) : (
+                        <span class="edition__partner">
+                          <Image src={p.logo} alt={p.alt ?? p.name} height={144} class="edition__partner-logo" />
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </section>
+      ))
+    }
+
+    {
+      hasPager && (
+        <nav class:list={["edition__pager", `edition__pager--${pagerTone}`]} aria-label="Inne edycje">
+          <div class="edition__pager-grid">
+            {prevEdition ? (
+              <a href={`/projects/${prevEdition.id}`} class="edition__pager-card edition__pager-card--prev" rel="prev">
+                <span class="edition__pager-label">
+                  <span class="edition__pager-back" aria-hidden="true">👈</span> Poprzednia
+                </span>
+                <span class="edition__pager-title">{prevEdition.data.title}</span>
+                <span class="edition__pager-meta">{metaOf(prevEdition)}</span>
+              </a>
+            ) : (
+              <span class="edition__pager-empty" aria-hidden="true" />
+            )}
+            {nextEdition ? (
+              <a href={`/projects/${nextEdition.id}`} class="edition__pager-card edition__pager-card--next" rel="next">
+                <span class="edition__pager-label">
+                  Następna <span class="nudge" aria-hidden="true">👉</span>
+                </span>
+                <span class="edition__pager-title">{nextEdition.data.title}</span>
+                <span class="edition__pager-meta">{metaOf(nextEdition)}</span>
+              </a>
+            ) : (
+              showNextPlaceholder && (
+                <a href="#powiadom" class="edition__pager-card edition__pager-card--next">
+                  <span class="edition__pager-label">
+                    Następna <span class="nudge" aria-hidden="true">👉</span>
+                  </span>
+                  <span class="edition__pager-title">{nextTitle}</span>
+                  <span class="edition__pager-meta">Termin wkrótce · 🔔 Powiadom mnie</span>
+                </a>
+              )
+            )}
+          </div>
+        </nav>
+      )
+    }
+
+    <HomeSignup tone={signupTone} />
   </div>
 </Layout>
 
+<script>
+  // Podświetlenie aktywnej sekcji w przyklejonym pasku
+  const nav = document.querySelector<HTMLElement>("[data-subnav]");
+  if (nav) {
+    const links = [...nav.querySelectorAll<HTMLAnchorElement>("a")];
+    const targets = links.map((a) => document.querySelector<HTMLElement>(a.hash)).filter(Boolean) as HTMLElement[];
+    const setActive = (id: string) =>
+      links.forEach((a) => (a.hash === `#${id}` ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
+    setActive(targets[0]?.id ?? "");
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && setActive(e.target.id)),
+      { rootMargin: "-40% 0px -55% 0px" }
+    );
+    targets.forEach((t) => io.observe(t));
+  }
+</script>
+
 <style lang="scss">
-  @use "sass:color";
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
   @use "../../styles/prose" as *;
 
-  .project-details {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 4.5rem 1.5rem;
+  $header-h: 84px; // wysokość przyklejonego menu na podstronach
 
-    &__back-wrapper {
-      margin-top: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
+  .edition {
+    background: #ffffff;
+    font-size: 17px;
+    line-height: 1.6;
 
-    &__header {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 1.5rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 1px dashed color.mix($color-text, $color-bg, 30%);
+    // ---------- HERO ----------
+    &__hero {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 112px 24px 56px;
 
-      @include respond-to('md') {
-        flex-direction: row;
-        align-items: center;
+      @include respond-to("md") {
+        padding: 128px 24px 72px;
       }
     }
 
-    &__header-info {
+    &__back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+      font-size: 15px;
+      font-weight: 500;
+      color: $color-primary;
+      text-decoration: none;
+      word-spacing: 0.14em;
+
+      &:hover {
+        color: $color-accent;
+      }
+    }
+
+    &__back-icon {
+      display: inline-block;
+      transition: transform $transition-base;
+    }
+
+    &__back:hover &__back-icon {
+      transform: translateX(-4px);
+
+      @media (prefers-reduced-motion: reduce) {
+        transform: none;
+      }
+    }
+
+    // Pod tytułem: opis + kafelki po lewej, plakat po prawej – od górnej krawędzi opisu
+    // do dolnej krawędzi kafelków (na telefonie plakat w naturalnych proporcjach pod spodem)
+    &__hero-grid {
+      display: grid;
+      gap: 32px;
+      margin-top: 28px;
+
+      @include respond-to("lg") {
+        grid-template-columns: 1.5fr 1fr;
+        gap: 48px;
+        align-items: stretch;
+      }
+    }
+
+    &__hero-text {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      max-width: 52rem;
+      gap: 24px;
+    }
+
+    &__eyebrow {
+      margin: 20px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      color: $home-muted;
+      word-spacing: 0.14em;
+    }
+
+    &__status {
+      font-family: $font-family-heading;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      word-spacing: normal;
+      color: $color-primary;
+      background: $home-grey;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    &__title-row {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px 24px;
     }
 
     &__title {
-      font-size: 1.875rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      line-height: 1.2;
+      @include heading-reset;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 40px;
+      line-height: 1;
       color: $color-primary;
 
-      @include respond-to('md') {
-        font-size: 3rem;
+      @include respond-to("md") {
+        font-size: 64px;
       }
-
-      span {
-        font-size: 1.25rem;
-
-        @include respond-to('md') {
-          font-size: 1.75rem;
-        }
-      }
-    }
-
-    &__description {
-      font-size: 1.5rem;
-      line-height: 1.6;
-      color: $color-text;
     }
 
     &__actions {
       display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 100%;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
 
-      @include respond-to('sm') {
-        flex-direction: row;
-        width: auto;
+    &__btn {
+      @include home-button-dark;
+      padding: 12px 22px;
+    }
+
+    &__pill {
+      @include home-pill;
+    }
+
+    &__lead {
+      margin: 0;
+      max-width: 560px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #3f3f46;
+
+      @include respond-to("md") {
+        font-size: 20px;
       }
     }
 
-    :global(.project-details__btn) {
-      width: 100%;
+    &__facts {
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
 
-      @include respond-to('sm') {
-        width: auto;
+      @include respond-to("md") {
+        gap: 12px;
       }
     }
 
-    // Układ pionowy dla sekcji głównej
-    &__body {
+    &__fact {
       display: flex;
       flex-direction: column;
-      gap: 2.5rem;
-      margin-top: 2.5rem;
-    }
+      gap: 4px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      background: $home-grey;
 
-    &__main-image-wrapper {
-      width: 100%;
-      aspect-ratio: 610 / 400;
-      overflow: hidden;
-      border-radius: 1rem;
+      dt {
+        font-family: $font-family-heading;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: $home-muted;
+      }
 
-      @include respond-to('md') {
-        aspect-ratio: 21 / 9;
+      dd {
+        margin: 0;
+        font-family: $font-family-heading;
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 1.3;
+        color: $color-primary;
+
+        @include respond-to("md") {
+          font-size: 18px;
+        }
+
+        span {
+          display: block;
+          margin-top: 2px;
+          font-family: $font-family-body;
+          font-weight: 400;
+          font-size: 13px;
+          color: $home-muted;
+        }
       }
     }
 
-    &__main-image {
+    &__poster {
+      position: relative;
+      margin: 0;
+
+      :global(img) {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 28px;
+        box-shadow: 0 30px 60px -30px rgba(15, 23, 42, 0.45);
+
+        @include respond-to("lg") {
+          position: absolute;
+          inset: 0;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+    }
+
+    // ---------- PASEK SEKCJI ----------
+    &__subnav {
+      position: sticky;
+      top: $header-h;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #ededed;
+
+      nav {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 10px 24px;
+        display: flex;
+        gap: 6px;
+        overflow-x: auto; // na telefonie pasek przewija się w bok
+        scrollbar-width: none;
+
+        @include respond-to("md") {
+          padding: 12px 24px;
+        }
+      }
+
+      a {
+        flex: none;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 15px;
+        font-weight: 500;
+        color: $color-primary;
+        text-decoration: none;
+        white-space: nowrap;
+        word-spacing: 0.14em;
+        transition: background $transition-base, color $transition-base;
+
+        &:hover {
+          background: $home-grey;
+        }
+
+        &[aria-current] {
+          background: $color-primary;
+          color: #ffffff;
+        }
+      }
+    }
+
+    // ---------- SEKCJE ----------
+    &__section {
+      scroll-margin-top: calc(#{$header-h} + 64px);
+
+      &--grey {
+        background: $home-grey;
+      }
+
+      &--white {
+        background: #ffffff;
+      }
+    }
+
+    &__wrap {
+      @include home-wrap;
+    }
+
+    &__head {
+      margin-bottom: 36px;
+
+      @include respond-to("md") {
+        margin-bottom: 48px;
+      }
+    }
+
+    &__kicker {
+      @include home-eyebrow;
+    }
+
+    &__h2 {
+      @include home-h2;
+    }
+
+    &__sub {
+      margin: 12px 0 0;
+      font-size: 18px;
+      color: $home-muted;
+    }
+
+    &__h3 {
+      @include heading-reset;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 20px;
+      color: $color-primary;
+
+      @include respond-to("md") {
+        font-size: 22px;
+      }
+    }
+
+    // Wyniki
+    &__results {
+      display: grid;
+      gap: 24px;
+      align-items: start;
+
+      @include respond-to("lg") {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    &__class {
+      background: #ffffff;
+      border-radius: $home-radius;
+      overflow: hidden;
+    }
+
+    &__section--white &__class {
+      background: $home-grey;
+    }
+
+    &__class-photo {
+      display: block;
       width: 100%;
-      height: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
       object-fit: cover;
     }
 
-    &__content {
-      max-width: 52rem;
-      width: 100%;
-      margin: auto;
-      font-size: 1.125rem;
-      line-height: 1.7;
-      color: $color-text;
+    &__class-body {
+      padding: 24px 20px 12px;
+
+      @include respond-to("md") {
+        padding: 28px 28px 16px;
+      }
+    }
+
+    &__entries {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+    }
+
+    &__entry {
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-top: 1px solid #ededed;
+
+      &:first-child {
+        border-top: 0;
+      }
+    }
+
+    &__place {
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 15px;
+      color: $home-muted;
+      text-align: center;
+    }
+
+    &__entry--podium &__place {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    &__team {
+      min-width: 0;
+
+      b {
+        display: block;
+        font-weight: 600;
+        font-size: 15px;
+        color: $color-primary;
+
+        @include respond-to("md") {
+          font-size: 16px;
+        }
+      }
+
+      span {
+        font-size: 14px;
+        color: $home-muted;
+      }
+    }
+
+    &__score {
+      text-align: right;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 15px;
+      color: $color-primary;
+      white-space: nowrap;
+
+      span {
+        display: block;
+        width: fit-content;
+        margin: 4px 0 0 auto;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-family: $font-family-body;
+        font-weight: 500;
+        font-size: 12px;
+        color: $color-accent;
+        background: $home-accent-soft;
+      }
+    }
+
+    &__note {
+      color: $home-muted !important;
+      background: transparent !important;
+      padding: 0 !important;
+    }
+
+    // Informacje
+    &__info {
+      display: grid;
+      gap: 48px;
+
+      @include respond-to("lg") {
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+      }
+
+      .edition__h2 {
+        margin-bottom: 28px;
+      }
+    }
+
+    &__team-list {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px 24px;
+      margin: 0;
+
+      dt {
+        font-size: 15px;
+        color: $home-muted;
+      }
+
+      dd {
+        margin: 0;
+        font-weight: 500;
+        color: $color-primary;
+      }
+    }
+
+    &__place-text {
+      margin: 0 0 20px;
+      font-size: 17px;
+    }
+
+    &__prose {
+      max-width: 832px;
+      margin-top: 48px;
+      font-size: 17px;
+      color: $home-text;
 
       @include prose;
-    } // <- TUTAJ BRAKOWAŁO NAWIASU ZAMYKAJĄCEGO &__content
+    }
 
-    // Sekcja galerii na pełną szerokość pod treścią
-    &__gallery {
-      margin-top: 3rem;
-      margin-bottom: 4.5rem;
-      padding-top: 3rem;
-      border-top: 1px dashed color.mix($color-text, $color-bg, 30%);
+    // Harmonogram
+    &__alert {
+      display: flex;
+      gap: 12px;
+      margin: 0 0 32px;
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: #fff7d6;
+      border: 1px solid $home-yellow;
+      font-size: 15px;
+      color: $home-text;
+    }
+
+    &__timeline {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    &__slot {
+      display: grid;
+      gap: 4px 24px;
+      padding: 22px 0;
+      border-top: 1px solid #dcdcda;
+
+      &:last-child {
+        border-bottom: 1px solid #dcdcda;
+      }
+
+      @include respond-to("md") {
+        grid-template-columns: 120px 1fr;
+      }
+    }
+
+    &__time {
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 18px;
+      color: $color-primary;
+
+      @include respond-to("md") {
+        font-size: 20px;
+      }
+    }
+
+    &__slot-desc {
+      margin: 4px 0 0;
+      font-size: 15px;
+      color: $home-muted;
+    }
+
+    &__details {
+      margin-top: 10px;
+
+      summary {
+        display: inline-flex;
+        gap: 6px;
+        min-height: 32px;
+        align-items: center;
+        cursor: pointer;
+        list-style: none;
+        font-size: 15px;
+        font-weight: 500;
+        color: $color-accent;
+        word-spacing: 0.14em;
+
+        &::-webkit-details-marker {
+          display: none;
+        }
+      }
+    }
+
+    &__startlist {
+      margin: 10px 0 0;
+      padding-left: 24px;
+      font-size: 15px;
+      color: $home-text;
+
+      @include respond-to("md") {
+        columns: 2;
+        column-gap: 32px;
+      }
+
+      li {
+        margin-bottom: 6px;
+        break-inside: avoid;
+      }
+    }
+
+    // Partnerzy
+    &__partners {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+
+      @include respond-to("md") {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+    }
+
+    &__partner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      padding: 16px;
+      border-radius: 20px;
+      background: #ffffff;
+      transition: box-shadow $transition-base;
+
+      @include respond-to("md") {
+        height: 140px;
+      }
+    }
+
+    &__section--white &__partner {
+      background: $home-grey;
+    }
+
+    a.edition__partner:hover {
+      box-shadow: 0 12px 30px -18px rgba(15, 23, 42, 0.35);
+    }
+
+    &__partner-logo {
+      display: block;
+      max-width: 100%;
+      max-height: 72px;
+      width: auto;
+      height: auto;
+    }
+  }
+
+  // ---------- poprzednia / następna edycja ----------
+  .edition__pager {
+    &--grey {
+      background: $home-grey;
+    }
+
+    &--white {
+      background: #ffffff;
+    }
+  }
+
+  .edition__pager-grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 56px 24px;
+    display: grid;
+    gap: 16px;
+
+    @include respond-to("md") {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      padding: 72px 24px;
+    }
+  }
+
+  .edition__pager-empty {
+    display: none;
+
+    @include respond-to("md") {
+      display: block;
+    }
+  }
+
+  .edition__pager-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 32px 28px;
+    border-radius: $home-radius;
+    text-decoration: none;
+    color: $color-primary;
+    @include home-card-hover;
+
+    @include respond-to("md") {
+      padding: 40px;
+    }
+
+    &--prev {
+      background: $home-grey;
+    }
+
+    &--next {
+      background: $color-primary;
+      color: #ffffff;
+      align-items: flex-end;
+      text-align: right;
+    }
+  }
+
+  .edition__pager--grey .edition__pager-card--prev {
+    background: #ffffff;
+  }
+
+  .edition__pager-label {
+    font-size: 15px;
+    font-weight: 500;
+    color: $home-muted;
+    word-spacing: 0.14em;
+
+    .edition__pager-card--next & {
+      color: #aab4c8;
+    }
+  }
+
+  .edition__pager-back {
+    display: inline-block;
+    transition: transform $transition-base;
+
+    .edition__pager-card:hover &,
+    .edition__pager-card:focus-visible & {
+      transform: translateX(-4px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      .edition__pager-card:hover & {
+        transform: none;
+      }
+    }
+  }
+
+  .edition__pager-title {
+    font-family: $font-family-heading;
+    font-weight: 600;
+    font-size: 28px;
+    line-height: 1.1;
+    text-transform: uppercase;
+
+    @include respond-to("lg") {
+      font-size: 36px;
+    }
+  }
+
+  .edition__pager-meta {
+    font-size: 15px;
+    font-weight: 500;
+    color: $color-accent;
+    word-spacing: 0.14em;
+
+    .edition__pager-card--next & {
+      color: $home-yellow;
     }
   }
 </style>

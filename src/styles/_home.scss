@@ -1,0 +1,129 @@
+// src/styles/_home.scss
+// Wspólne klocki strony głównej (wersja 5): kolory sekcji, skala typografii,
+// jeden wzór nagłówka sekcji (etykieta z emoji + H2) i przyciski-pigułki.
+//
+// Skala: 13 meta · 15 etykiety/przyciski · 17 tekst · 20 lead
+//        20/32 tytuły newsów · 32–36 nazwy edycji · 44 H2 · 64 liczby
+@use "variables" as *;
+@use "mixins" as *;
+
+$home-grey: #f4f4f2;
+$home-line: #e4e4e2;
+$home-muted: #636874;
+$home-text: #4a4a4a;
+$home-yellow: #f2c230;
+$home-accent-soft: #e9effd;
+$home-radius: 24px;
+
+// Kontener sekcji: 1280 px jak nawigacja (treść 1232 px), 112 px oddechu na desktopie
+@mixin home-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 24px;
+
+  @include respond-to("md") {
+    padding: 96px 24px;
+  }
+
+  @include respond-to("lg") {
+    padding: 112px 24px;
+  }
+}
+
+// Zerowanie globalnych stylów nagłówków (wielkie litery, line-clamp, ogromne h2)
+@mixin heading-reset {
+  margin: 0;
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.2;
+}
+
+@mixin home-h2 {
+  @include heading-reset;
+  font-family: $font-family-heading;
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: $color-primary;
+
+  @include respond-to("md") {
+    font-size: 44px;
+  }
+}
+
+@mixin home-eyebrow {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: $home-muted;
+  word-spacing: 0.14em; // Geist ma wąską spację – emoji nie klei się do słowa
+}
+
+@mixin home-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 11px 20px;
+  border-radius: 999px;
+  border: 1.5px solid $color-primary;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: $color-primary;
+  text-decoration: none;
+  white-space: nowrap;
+  word-spacing: 0.14em;
+  transition: background $transition-base, color $transition-base;
+
+  &:hover {
+    background: $color-primary;
+    color: #ffffff;
+  }
+}
+
+@mixin home-button-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em; // w flexie spacja przed emoji znika – odstęp daje gap
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 0;
+  background: $color-primary;
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  word-spacing: 0.14em;
+  cursor: pointer;
+  transition: background $transition-base;
+
+  &:hover {
+    background: $color-accent;
+    color: #ffffff;
+  }
+}
+
+// Karta, która lekko unosi się po najechaniu
+@mixin home-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px -24px rgba(15, 23, 42, 0.35);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}

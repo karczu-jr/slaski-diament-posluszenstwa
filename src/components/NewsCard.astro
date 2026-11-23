@@ -1,291 +1,225 @@
 ---
 // src/components/NewsCard.astro
-// Karta newsa w dwóch wariantach:
-// - "featured": duża, pozioma karta dla najnowszego wpisu
-// - "compact":  mniejsza karta do siatki pod spodem
+// Karta newsa (wersja 5) – wspólna dla strony głównej, listy newsów i "Czytaj także".
+// - "featured": duża, pozioma karta (najnowszy wpis)
+// - "compact":  mniejsza karta do siatki
 import type { CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
-import ForwardButton from "./ForwardButton.astro";
 
 interface Props {
   entry: CollectionEntry<"blog">;
   variant?: "featured" | "compact";
+  /** Plakietka na zdjęciu, np. "Najnowsze" (tylko featured) */
+  badge?: string;
+  /** Poziom nagłówka tytułu – h2 na liście, h3 w sekcjach */
+  headingLevel?: 2 | 3;
 }
 
-const { entry, variant = "compact" } = Astro.props;
-const { title, description, date, image, tags } = entry.data;
+const { entry, variant = "compact", badge, headingLevel = 3 } = Astro.props;
+const { title, description, date, tags } = entry.data;
+const H = `h${headingLevel}` as "h2" | "h3";
 
 const href = `/blog/${entry.id}`;
-const isFeatured = variant === "featured";
+const featured = variant === "featured";
 const tag = tags?.[0];
-
-const formattedDate = date
-  ? date.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })
-  : null;
-
+// Zdjęcie karty: okładka, a gdy jej brak – pierwsze zdjęcie z galerii wpisu
+const cover = entry.data.image ?? entry.data.gallery?.[0];
+const formattedDate = date?.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" });
 ---
 
-<article class:list={["news-card", `news-card--${variant}`]}>
-  <a href={href} class="news-card__link" data-forward-hover>
-    <div class="news-card__media">
+<article class:list={["news-card", `news-card--${variant}`]} data-tag={tag}>
+  <a href={href} class="news-card__link">
+    <span class="news-card__media">
       {
-        image?.url ? (
+        cover ? (
           <Image
-            src={image.url}
+            src={cover.url}
             alt=""
-            class="news-card__image"
-            widths={isFeatured ? [640, 960, 1400] : [400, 600, 900]}
-            sizes={isFeatured ? "(min-width: 768px) 60vw, 100vw" : "(min-width: 768px) 33vw, 100vw"}
-            loading={isFeatured ? "eager" : "lazy"}
+            widths={featured ? [640, 960, 1400] : [400, 600, 900]}
+            sizes={featured ? "(min-width: 768px) 60vw, 100vw" : "(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"}
+            class="news-card__img"
+            loading={featured ? "eager" : "lazy"}
           />
         ) : (
-          // Brak zdjęcia – estetyczny zamiennik zamiast szarego placeholdera
-          <div class="news-card__fallback" aria-hidden="true">
-            <span class="news-card__fallback-icon">◆</span>
-            <span class="news-card__fallback-text">Newsy</span>
-          </div>
+          <span class="news-card__fallback" aria-hidden="true">
+            ◆
+          </span>
         )
       }
-      {isFeatured && <span class="news-card__badge">Najnowsze</span>}
-    </div>
+      {featured && badge && <span class="news-card__badge">{badge}</span>}
+    </span>
 
-    <div class="news-card__body">
-      {
-        (tag || formattedDate) && (
-          <p class="news-card__meta">
-            {tag && <span class="news-card__tag">{tag}</span>}
-            {formattedDate && <time datetime={date?.toISOString()}>{formattedDate}</time>}
-          </p>
-        )
-      }
-
-      <h3 class="news-card__title">{title}</h3>
-
-      {description && <p class="news-card__description">{description}</p>}
-
-      <div class="news-card__more">
-        <ForwardButton />
-      </div>
-    </div>
+    <span class="news-card__body">
+      <span class="news-card__meta">
+        {tag && <span class="news-card__tag">{tag}</span>}
+        {date && <time datetime={date.toISOString()}>{formattedDate}</time>}
+      </span>
+      <H class="news-card__title">{title}</H>
+      {description && <span class="news-card__desc">{description}</span>}
+      <span class="news-card__more">Czytaj dalej <span class="nudge" aria-hidden="true">👉</span></span>
+    </span>
   </a>
 </article>
 
 <style lang="scss">
-  @use "sass:color";
   @use "../styles/variables" as *;
   @use "../styles/mixins" as *;
-
-  $border: color.mix($color-text, $color-bg, 20%);
+  @use "../styles/home" as *;
 
   .news-card {
-    height: 100%;
+    display: flex;
+    width: 100%;
 
     &__link {
       display: flex;
       flex-direction: column;
-      height: 100%;
-      color: inherit;
+      width: 100%;
       text-decoration: none;
-      background: $color-bg;
-      border: 1px dashed $border;
-      border-radius: 1.5rem;
+      color: inherit;
+      background: #ffffff;
+      border-radius: $home-radius;
       overflow: hidden;
-      transition:
-        transform $transition-base,
-        box-shadow $transition-base,
-        border-color $transition-base;
-
-      &:hover {
-        transform: translateY(-4px);
-        border-color: color.mix($color-text, $color-bg, 45%);
-        box-shadow: 0 18px 40px -24px rgba(15, 23, 42, 0.35);
-      }
-
-      &:focus-visible {
-        outline: 3px solid $color-accent;
-        outline-offset: 4px;
-      }
+      @include home-card-hover;
     }
 
-    // ---------- Zdjęcie ----------
     &__media {
       position: relative;
+      display: block;
       aspect-ratio: 3 / 2;
       overflow: hidden;
-      background: color.mix($color-text, $color-bg, 6%);
     }
 
-    &__image {
-      display: block;
+    &__img {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 500ms ease;
-    }
-
-    &__link:hover &__image {
-      transform: scale(1.04);
     }
 
     &__fallback {
+      position: absolute;
+      inset: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      width: 100%;
-      height: 100%;
-      color: color.mix($color-primary, $color-bg, 35%);
+      font-size: 30px;
+      color: rgba($color-accent, 0.6);
       background:
-        radial-gradient($bg-pattern-dot 1px, transparent 1px) 0 0 / 14px 14px,
-        linear-gradient(135deg, color.mix($color-accent, $color-bg, 8%), color.mix($color-text, $color-bg, 6%));
-    }
-
-    &__fallback-icon {
-      font-size: 2rem;
-      color: $color-accent;
-      opacity: 0.6;
-    }
-
-    &__fallback-text {
-      font-family: $font-family-heading;
-      font-size: 0.85rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
+        radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px) 0 0 / 14px 14px,
+        linear-gradient(135deg, #eef3fd, #f1f1f1);
     }
 
     &__badge {
       position: absolute;
-      top: 1rem;
-      left: 1rem;
-      padding: 0.35rem 0.75rem;
+      top: 16px;
+      left: 16px;
       font-family: $font-family-heading;
-      font-size: 0.75rem;
+      font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: $color-bg;
+      color: #ffffff;
       background: $color-primary;
+      padding: 5px 12px;
       border-radius: 999px;
     }
 
-    // ---------- Treść ----------
     &__body {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      flex: 1;
-      gap: 0.75rem;
-      padding: 1.25rem 1.5rem 1.5rem;
+      gap: 10px;
+      padding: 20px 24px 24px;
     }
 
     &__meta {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.75rem;
-      margin: 0;
-      font-size: 0.85rem;
-      color: color.mix($color-text, $color-bg, 75%);
+      gap: 10px;
+      font-size: 13px;
+      color: $home-muted;
     }
 
     &__tag {
-      padding: 0.2rem 0.6rem;
       font-family: $font-family-heading;
-      font-size: 0.75rem;
-      text-transform: uppercase;
+      font-size: 12px;
       letter-spacing: 0.05em;
+      text-transform: uppercase;
       color: $color-accent;
-      background: color.mix($color-accent, $color-bg, 10%);
+      background: $home-accent-soft;
+      padding: 3px 10px;
       border-radius: 999px;
     }
 
     &__title {
-      margin: 0;
-      font-size: 1.2rem;
+      @include heading-reset;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 20px;
       line-height: 1.3;
-      text-transform: none;
       color: $color-primary;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
     }
 
-    &__description {
-      margin: 0;
-      font-size: 0.975rem;
-      line-height: 1.55;
-      color: color.mix($color-text, $color-bg, 85%);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    &__desc {
+      font-size: 15px;
+      line-height: 1.6;
+      color: $home-text;
     }
 
     &__more {
       margin-top: auto;
+      padding-top: 4px;
+      font-size: 15px;
+      font-weight: 500;
+      color: $color-primary;
+      word-spacing: 0.14em;
     }
 
-    // ---------- Wariant: duża karta ----------
-    &--featured {
-      .news-card__link {
-        @include respond-to("md") {
-          display: grid;
-          grid-template-columns: 1.35fr 1fr;
-        }
-      }
-
-      .news-card__media {
-        aspect-ratio: 16 / 10;
-
-        @include respond-to("md") {
-          aspect-ratio: auto;
-          min-height: 22rem;
-        }
-      }
-
-      .news-card__body {
-        justify-content: center;
-        gap: 1rem;
-        padding: 1.5rem;
-
-        @include respond-to("md") {
-          padding: 2.5rem;
-        }
-      }
-
-      .news-card__title {
-        font-size: 1.6rem;
-        -webkit-line-clamp: 3;
-
-        @include respond-to("lg") {
-          font-size: 2.25rem;
-        }
-      }
-
-      .news-card__description {
-        font-size: 1.05rem;
-        -webkit-line-clamp: 4;
-
-        @include respond-to("lg") {
-          font-size: 1.15rem;
-        }
-      }
-
-      .news-card__more {
-        margin-top: 0.5rem;
+    // ---------- duża karta ----------
+    &--featured &__link {
+      @include respond-to("md") {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
       }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      &__link,
-      &__image {
-        transition: none;
-      }
+    &--featured &__media {
+      aspect-ratio: 4 / 3;
 
-      &__link:hover {
-        transform: none;
+      @include respond-to("md") {
+        aspect-ratio: auto;
+        min-height: 400px;
       }
+    }
+
+    &--featured &__body {
+      justify-content: center;
+      gap: 14px;
+      padding: 28px 24px;
+
+      @include respond-to("md") {
+        padding: 40px;
+        gap: 16px;
+      }
+    }
+
+    &--featured &__title {
+      font-size: 24px;
+      line-height: 1.2;
+
+      @include respond-to("lg") {
+        font-size: 32px;
+      }
+    }
+
+    &--featured &__desc {
+      font-size: 17px;
+    }
+
+    &--featured &__more {
+      margin-top: 0;
     }
   }
 </style>

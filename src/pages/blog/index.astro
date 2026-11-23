@@ -1,8 +1,11 @@
 ---
 // src/pages/blog/index.astro
-// Lista wszystkich newsów: wyróżniony najnowszy wpis + siatka pogrupowana po latach.
+// Lista newsów (wersja 5): nagłówek z filtrem kategorii, najnowszy wpis duży,
+// reszta w siatce pogrupowanej po latach, na końcu zapis na powiadomienia.
+// Wpisy: src/content/blog/*.mdx – kategoria to pierwszy tag wpisu.
 import Layout from "../../layouts/Layout.astro";
 import NewsCard from "../../components/NewsCard.astro";
+import HomeSignup from "../../components/home/HomeSignup.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { BLOG } from "../../consts";
 
@@ -12,7 +15,7 @@ const posts: CollectionEntry<"blog">[] = (await getCollection("blog"))
 
 const [featured, ...rest] = posts;
 
-// Grupowanie pozostałych wpisów po roku (wpisy bez daty trafiają na koniec)
+// Grupowanie po roku (wpisy bez daty na końcu)
 const NO_DATE = "Bez daty";
 const groups = new Map<string, CollectionEntry<"blog">[]>();
 for (const post of rest) {
@@ -22,6 +25,14 @@ for (const post of rest) {
 const years = [...groups.keys()].sort((a, b) =>
   a === NO_DATE ? 1 : b === NO_DATE ? -1 : Number(b) - Number(a)
 );
+
+// Kategorie do filtra (pierwszy tag wpisu) z liczbą wpisów
+const tagCounts = new Map<string, number>();
+for (const p of posts) {
+  const t = p.data.tags?.[0];
+  if (t) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+}
+const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 
 const countLabel = (n: number) => {
   if (n === 1) return "1 wpis";
@@ -33,158 +44,219 @@ const countLabel = (n: number) => {
 ---
 
 <Layout title={BLOG.TITLE} description={BLOG.DESCRIPTION}>
-  <section class="news-page" aria-labelledby="news-heading">
+  <div class="news-page">
     <header class="news-page__header">
-      <div class="news-page__heading">
-        <h1 id="news-heading" class="news-page__title">Newsy</h1>
-        <span class="news-page__count">{countLabel(posts.length)}</span>
-      </div>
+      <p class="news-page__eyebrow">📰 Newsy</p>
+      <h1 class="news-page__title">Informacje o zawodach i nie tylko</h1>
       <p class="news-page__lead">
-        Ogłoszenia, wyniki i relacje z zawodów Śląskiego Diamentu Posłuszeństwa.
+        Ogłoszenia, zapisy, wyniki i relacje z zawodów Śląskiego Diamentu Posłuszeństwa.
       </p>
+
+      {
+        tags.length > 1 && (
+          <div class="news-page__filters" role="group" aria-label="Filtruj według kategorii" data-news-filters>
+            <button type="button" class="news-page__chip" aria-pressed="true" data-filter="">
+              Wszystkie <span class="news-page__chip-count">{posts.length}</span>
+            </button>
+            {tags.map(([tag, n]) => (
+              <button type="button" class="news-page__chip" aria-pressed="false" data-filter={tag}>
+                {tag} <span class="news-page__chip-count">{n}</span>
+              </button>
+            ))}
+          </div>
+        )
+      }
     </header>
 
-    {
-      featured ? (
-        <div class="news-page__body">
-          <NewsCard entry={featured} variant="featured" />
+    <section class="news-page__list" aria-label="Lista newsów">
+      <div class="news-page__wrap">
+        {
+          featured ? (
+            <>
+              <div class="news-page__featured" data-item data-tag={featured.data.tags?.[0] ?? ""}>
+                <NewsCard entry={featured} variant="featured" badge="Najnowsze" headingLevel={2} />
+              </div>
 
-          {years.map((year) => (
-            <section class="news-page__group" aria-labelledby={`year-${year}`}>
-              <h2 id={`year-${year}`} class="news-page__year">
-                {year}
-                <span class="news-page__year-count">{countLabel(groups.get(year)!.length)}</span>
-              </h2>
-              <ul class="news-page__grid" role="list">
-                {groups.get(year)!.map((post) => (
-                  <li class="news-page__item">
-                    <NewsCard entry={post} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <p class="news-page__empty">Wkrótce pojawią się tu pierwsze newsy.</p>
-      )
-    }
-  </section>
+              {years.map((year) => (
+                <section class="news-page__group" aria-labelledby={`year-${year}`} data-group>
+                  <h2 id={`year-${year}`} class="news-page__year">
+                    {year}
+                    <span class="news-page__year-count">{countLabel(groups.get(year)!.length)}</span>
+                  </h2>
+                  <ul class="news-page__grid" role="list">
+                    {groups.get(year)!.map((post) => (
+                      <li data-item data-tag={post.data.tags?.[0] ?? ""}>
+                        <NewsCard entry={post} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+
+              <p class="news-page__empty" data-empty hidden>
+                Brak wpisów w tej kategorii.
+              </p>
+            </>
+          ) : (
+            <p class="news-page__empty">Wkrótce pojawią się tu pierwsze newsy.</p>
+          )
+        }
+      </div>
+    </section>
+
+    <HomeSignup tone="white" />
+  </div>
 </Layout>
 
+<script>
+  // Filtr kategorii: pokazuje tylko wpisy z wybranym tagiem (bez przeładowania strony)
+  const bar = document.querySelector<HTMLElement>("[data-news-filters]");
+  if (bar) {
+    const chips = [...bar.querySelectorAll<HTMLButtonElement>("[data-filter]")];
+    const items = [...document.querySelectorAll<HTMLElement>("[data-item]")];
+    const groups = [...document.querySelectorAll<HTMLElement>("[data-group]")];
+    const empty = document.querySelector<HTMLElement>("[data-empty]");
+
+    const apply = (tag: string) => {
+      chips.forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.filter === tag)));
+      items.forEach((el) => (el.hidden = tag !== "" && el.dataset.tag !== tag));
+      groups.forEach((g) => (g.hidden = !g.querySelector("[data-item]:not([hidden])")));
+      if (empty) empty.hidden = items.some((el) => !el.hidden);
+    };
+
+    chips.forEach((c) => c.addEventListener("click", () => apply(c.dataset.filter ?? "")));
+  }
+</script>
+
 <style lang="scss">
-  @use "sass:color";
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
 
   .news-page {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 6.5rem 1.5rem 4.5rem;
+    background: #ffffff;
+    font-size: 17px;
+    line-height: 1.6;
 
+    // Nagłówek strony – miejsce na przyklejone menu u góry
     &__header {
-      max-width: 48rem;
-      margin-bottom: 2.5rem;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 120px 24px 48px;
 
       @include respond-to("md") {
-        margin-bottom: 3.5rem;
+        padding: 144px 24px 56px;
       }
     }
 
-    // Nagłówek z licznikiem wpisów obok, wyrównanym do linii bazowej tytułu
-    &__heading {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.25rem 1rem;
-      margin-bottom: 1rem;
+    &__eyebrow {
+      @include home-eyebrow;
     }
 
     &__title {
-      margin: 0;
-      font-size: 3rem;
-      line-height: 1;
+      @include home-h2;
+      font-weight: 600;
+      font-size: 36px;
 
       @include respond-to("md") {
-        font-size: 5rem;
-      }
-
-      @include respond-to("lg") {
-        font-size: 6.5rem;
-      }
-    }
-
-    &__count {
-      font-family: $font-family-heading;
-      font-size: 0.9rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      color: $color-accent;
-
-      @include respond-to("md") {
-        font-size: 1.1rem;
+        font-size: 52px;
       }
     }
 
     &__lead {
-      margin: 0;
-      font-size: 1.125rem;
-      line-height: 1.6;
-      color: $color-text;
+      margin: 16px 0 0;
+      max-width: 640px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #3f3f46;
 
       @include respond-to("md") {
-        font-size: 1.25rem;
+        font-size: 20px;
       }
     }
 
-    &__body {
+    // Filtr kategorii – pigułki
+    &__filters {
       display: flex;
-      flex-direction: column;
-      gap: 3rem;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 32px;
+    }
 
-      @include respond-to("md") {
-        gap: 4rem;
+    &__chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1.5px solid #dcdcda;
+      background: #ffffff;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      color: $color-primary;
+      cursor: pointer;
+      transition: border-color $transition-base, background $transition-base, color $transition-base;
+
+      &:hover {
+        border-color: $color-primary;
+      }
+
+      &[aria-pressed="true"] {
+        background: $color-primary;
+        border-color: $color-primary;
+        color: #ffffff;
       }
     }
 
-    &__group {
+    &__chip-count {
+      font-family: $font-family-heading;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    // Lista na szarym tle (jak newsy na stronie głównej)
+    &__list {
+      background: $home-grey;
+    }
+
+    &__wrap {
+      @include home-wrap;
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 56px;
+    }
+
+    &__featured {
+      display: flex;
     }
 
     &__year {
+      @include heading-reset;
       display: flex;
       align-items: baseline;
-      justify-content: space-between;
-      gap: 1rem;
-      margin: 0;
-      padding-bottom: 0.75rem;
-      font-size: 1.75rem;
-      border-bottom: 1px dashed color.mix($color-text, $color-bg, 25%);
-
-      @include respond-to("md") {
-        font-size: 2.25rem;
-      }
+      gap: 12px;
+      margin-bottom: 24px;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 28px;
+      color: $color-primary;
     }
 
     &__year-count {
       font-family: $font-family-body;
-      font-size: 0.9rem;
+      font-size: 15px;
       font-weight: 400;
-      text-transform: none;
-      letter-spacing: 0;
-      color: color.mix($color-text, $color-bg, 70%);
+      color: $home-muted;
     }
 
     &__grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
+      list-style: none;
       margin: 0;
       padding: 0;
-      list-style: none;
+      display: grid;
+      gap: 24px;
 
       @include respond-to("sm") {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -192,21 +264,21 @@ const countLabel = (n: number) => {
 
       @include respond-to("lg") {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 2rem;
+      }
+
+      > li {
+        display: flex;
       }
     }
 
-    &__item {
-      margin: 0;
-      padding: 0;
-
-      &::before {
-        content: none;
-      }
+    [hidden] {
+      display: none !important;
     }
 
     &__empty {
-      color: $color-text;
+      margin: 0;
+      font-size: 17px;
+      color: $home-muted;
     }
   }
 </style>

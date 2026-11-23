@@ -1,0 +1,60 @@
+---
+// src/components/home/SectionHead.astro
+// Jeden wzór nagłówka sekcji na całej stronie: etykieta z emoji + H2,
+// opcjonalnie przycisk po prawej (slot "action").
+interface Props {
+  eyebrow: string;
+  title: string;
+  id: string;
+  /** Jasny tekst na ciemnym tle */
+  dark?: boolean;
+}
+const { eyebrow, title, id, dark = false } = Astro.props;
+---
+
+<div class:list={["section-head", { "section-head--dark": dark }]}>
+  <div class="section-head__text">
+    <p class="section-head__eyebrow">{eyebrow}</p>
+    <h2 id={id} class="section-head__title">{title}</h2>
+  </div>
+  <slot name="action" />
+</div>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
+
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px 24px;
+    margin-bottom: 36px;
+
+    @include respond-to("md") {
+      margin-bottom: 48px;
+    }
+
+    &__text {
+      max-width: 820px;
+    }
+
+    &__eyebrow {
+      @include home-eyebrow;
+    }
+
+    &__title {
+      @include home-h2;
+    }
+
+    &--dark &__eyebrow {
+      color: #aab4c8;
+    }
+
+    &--dark &__title {
+      color: #ffffff;
+    }
+  }
+</style>

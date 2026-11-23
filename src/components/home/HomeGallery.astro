@@ -1,0 +1,318 @@
+---
+// src/components/home/HomeGallery.astro
+// "Zdjęcia z ringu" – mozaika o RÓWNYCH kolumnach.
+// Zdjęcia: wpisy galerii w src/content/projects/*.mdx oznaczone "home: true"
+// (najpierw z najnowszej edycji). Bez oznaczeń bierzemy pierwsze zdjęcia galerii.
+//
+// Układ jest stały: 4 kolumny po 3 kafelki. Proporcje dobrane tak, że każda kolumna
+// ma tę samą wysokość (3/4 + 1/1 + 4/3 w każdej), więc dół mozaiki jest równy.
+// Na telefonie kolumny łączą się parami (1+2, 3+4) – też wychodzą równe.
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import SectionHead from "./SectionHead.astro";
+import { getEditions } from "../../data/editions";
+
+const { past } = await getEditions();
+
+const withGallery = past.filter((e) => e.data.gallery?.length);
+let photos = withGallery.flatMap((e) => (e.data.gallery ?? []).filter((g) => g.home));
+if (photos.length === 0) photos = withGallery[0]?.data.gallery ?? [];
+
+const galleryHref = withGallery[0] ? `/projects/${withGallery[0].id}` : "/projects";
+
+type Slot = { kind: "photo" | "classes" | "credit" | "more"; ratio: string };
+type Tile =
+  | { kind: "photo"; ratio: string; src: ImageMetadata; alt: string }
+  | { kind: "classes" | "credit" | "more"; ratio: string };
+
+const P = (ratio: string): Slot => ({ kind: "photo", ratio });
+const LAYOUT: Slot[][] = [
+  [P("3 / 4"), { kind: "classes", ratio: "1 / 1" }, P("4 / 3")],
+  [P("4 / 3"), P("3 / 4"), P("1 / 1")],
+  [{ kind: "credit", ratio: "1 / 1" }, P("4 / 3"), P("3 / 4")],
+  [P("3 / 4"), P("4 / 3"), { kind: "more", ratio: "1 / 1" }],
+];
+
+// Wypełniamy miejsca na zdjęcia po kolei; puste miejsca (za mało zdjęć) pomijamy
+let next = 0;
+const columns: Tile[][] = LAYOUT.map((col) =>
+  col.flatMap((slot): Tile[] => {
+    if (slot.kind !== "photo") return [slot as Tile];
+    const p = photos[next++];
+    return p ? [{ kind: "photo", ratio: slot.ratio, src: p.url, alt: p.alt }] : [];
+  })
+);
+const halves = [columns.slice(0, 2), columns.slice(2, 4)];
+---
+
+{
+  photos.length > 0 && (
+    <section class="gallery" aria-labelledby="gallery-title">
+      <div class="gallery__wrap">
+        <SectionHead eyebrow="📸 Galeria" title="Zdjęcia z ringu" id="gallery-title" />
+
+        <div class="gallery__grid">
+          {halves.map((half) => (
+            <div class="gallery__half">
+              {half.map((col) => (
+                <ul class="gallery__col">
+                  {col.map((t) => (
+                    <li class:list={["gallery__tile", `gallery__tile--${t.kind}`]} style={`aspect-ratio: ${t.ratio}`}>
+                      {t.kind === "photo" && (
+                        <Image
+                          src={t.src}
+                          alt={t.alt}
+                          widths={[400, 600, 900, 1200]}
+                          sizes="(min-width: 1024px) 580px, 100vw"
+                          class="gallery__img"
+                          loading="lazy"
+                        />
+                      )}
+                      {t.kind === "classes" && (
+                        <>
+                          <span class="gallery__emoji" aria-hidden="true">🐕</span>
+                          <span>
+                            <span class="gallery__big">Klasy 0–3</span>
+                            <span class="gallery__small">na jednych zawodach</span>
+                          </span>
+                        </>
+                      )}
+                      {t.kind === "credit" && (
+                        <>
+                          <span class="gallery__label">Fot. Marta Wlazło</span>
+                          <span class="gallery__quote">
+                            Emocje z ringu, klatka po klatce <span aria-hidden="true">📸</span>
+                          </span>
+                        </>
+                      )}
+                      {t.kind === "more" && (
+                        <a href={galleryHref} class="gallery__more">
+                          <span class="gallery__emoji" aria-hidden="true">🐾</span>
+                          <span class="gallery__more-text">Cała galeria <span class="nudge" aria-hidden="true">👉</span></span>
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
+
+  $gap-mobile: 12px;
+  $gap: 16px;
+
+  .gallery {
+    background: #ffffff;
+
+    &__wrap {
+      @include home-wrap;
+    }
+
+    // Telefon/tablet: 2 kolumny (każda = dwie kolumny desktopu jedna pod drugą)
+    &__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: $gap-mobile;
+      align-items: start;
+
+      @include respond-to("md") {
+        gap: $gap;
+      }
+
+      // Desktop: 4 kolumny – połówki "znikają", a ich kolumny stają się kolumnami siatki
+      @include respond-to("lg") {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    &__half {
+      display: flex;
+      flex-direction: column;
+      gap: $gap-mobile;
+
+      @include respond-to("md") {
+        gap: $gap;
+      }
+
+      @include respond-to("lg") {
+        display: contents;
+      }
+    }
+
+    &__col {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: $gap-mobile;
+
+      @include respond-to("md") {
+        gap: $gap;
+      }
+    }
+
+    &__tile {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #e5e7eb;
+
+      @include respond-to("md") {
+        border-radius: 20px;
+      }
+
+      &--classes,
+      &--credit {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 16px;
+
+        @include respond-to("md") {
+          padding: 24px;
+        }
+      }
+
+      &--classes {
+        background: $home-yellow;
+        color: $color-primary;
+      }
+
+      &--credit {
+        background: $color-primary;
+        color: #ffffff;
+      }
+
+      &--more {
+        background: #ffffff;
+        border: 2px solid $color-accent;
+        transition: background $transition-base;
+
+        &:hover {
+          background: $home-accent-soft;
+        }
+      }
+    }
+
+    &__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
+    }
+
+    &__tile:hover &__img {
+      transform: scale(1.04);
+    }
+
+    &__emoji {
+      font-size: 24px;
+      line-height: 1;
+
+      @include respond-to("md") {
+        font-size: 32px;
+      }
+    }
+
+    &__big {
+      display: block;
+      white-space: nowrap;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 22px;
+      line-height: 1.1;
+
+      @include respond-to("md") {
+        font-size: 30px;
+      }
+
+      @include respond-to("xl") {
+        font-size: 40px;
+      }
+    }
+
+    &__small {
+      display: block;
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.35;
+
+      @include respond-to("md") {
+        font-size: 17px;
+      }
+    }
+
+    &__label {
+      font-family: $font-family-heading;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #aab4c8;
+
+      @include respond-to("md") {
+        font-size: 12px;
+      }
+    }
+
+    &__quote {
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 15px;
+      line-height: 1.25;
+
+      @include respond-to("md") {
+        font-size: 22px;
+      }
+
+      @include respond-to("xl") {
+        font-size: 24px;
+      }
+    }
+
+    &__more {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      text-decoration: none;
+      color: $color-primary;
+
+      @include respond-to("md") {
+        padding: 24px;
+      }
+    }
+
+    &__more-text {
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 15px;
+      line-height: 1.25;
+      word-spacing: 0.14em;
+
+      @include respond-to("md") {
+        font-size: 20px;
+      }
+    }
+  }
+</style>

@@ -3,6 +3,8 @@
 import Head from "../components/Head.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import AnnouncementBar from "../components/AnnouncementBar.astro";
+import CookieConsent from "../components/CookieConsent.astro";
 import { SITE } from "../consts";
 
 import "../styles/main.scss";
@@ -13,17 +15,20 @@ type Props = {
   image?: string;
 };
 
-const { title, description } = Astro.props;
+const { title, description, image } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="pl">
-  <Head title={`${title} | ${SITE.TITLE}`} description={description} />
+  <Head title={`${title} | ${SITE.TITLE}`} description={description} image={image} />
   <body>
     <!-- Skocz do treści (A11y) -->
     <a href="#main-content" class="skip-link">
       Przejdź do głównej treści
     </a>
+
+    <!-- Pasek ogłoszeń (włącznik: src/data/announcement.ts) -->
+    <AnnouncementBar />
 
     <Header />
     
@@ -35,6 +40,79 @@ const { title, description } = Astro.props;
     </div>
 
     <Footer />
+    <CookieConsent />
+    <script>
+      // Pasek ogłoszeń przewija się ze stroną – menu (przyklejone) startuje tuż pod nim,
+      // a gdy pasek zniknie u góry ekranu, menu dojeżdża do samej krawędzi.
+      const bar = document.querySelector<HTMLElement>("[data-announce]");
+      if (bar) {
+        const root = document.documentElement;
+        const update = () => {
+          const h = bar.offsetHeight;
+          root.style.setProperty("--announce-h", `${h}px`);
+          root.style.setProperty("--header-top", `${Math.max(0, h - window.scrollY)}px`);
+        };
+        update();
+        window.addEventListener("scroll", update, { passive: true });
+        window.addEventListener("resize", update);
+      }
+    </script>
+    <script>
+      // Treść pojawia się przy przewijaniu: bloki każdej sekcji (nagłówek, tekst, karty)
+      // wjeżdżają od dołu, a elementy list – kolejno, jeden po drugim.
+      // To, co widać od razu po wejściu na stronę, nie jest animowane.
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const main = document.getElementById("main-content");
+      if (!reduce && main && "IntersectionObserver" in window) {
+        const targets: HTMLElement[] = [];
+        const add = (el: Element, delay = 0) => {
+          const h = el as HTMLElement;
+          if (getComputedStyle(h).display === "contents") {
+            [...h.children].forEach((c, i) => add(c, i));
+            return;
+          }
+          if (h.getBoundingClientRect().top < window.innerHeight * 0.9) return;
+          if (delay) h.style.setProperty("--reveal-delay", `${Math.min(delay, 5) * 80}ms`);
+          h.dataset.reveal = "";
+          targets.push(h);
+        };
+
+        main.querySelectorAll("section, nav:not([data-subnav])").forEach((group) => {
+          if (group.parentElement?.closest("section")) return; // tylko sekcje najwyższego poziomu
+          let box: Element = group;
+          while (box.children.length === 1 && box.firstElementChild?.tagName === "DIV") box = box.firstElementChild;
+          [...box.children].forEach((el) => {
+            if (el.matches("ul, ol") && el.children.length > 1) [...el.children].forEach((li, i) => add(li, i));
+            else add(el);
+          });
+        });
+
+        const io = new IntersectionObserver(
+          (entries) =>
+            entries.forEach((e) => {
+              if (!e.isIntersecting) return;
+              e.target.classList.add("is-visible");
+              io.unobserve(e.target);
+            }),
+          { rootMargin: "0px 0px -8% 0px", threshold: 0.1 }
+        );
+        // Po wjeździe oddajemy elementowi jego własne przejścia (np. uniesienie karty po najechaniu)
+        const done = (e: TransitionEvent) => {
+          const el = e.currentTarget as HTMLElement;
+          // tylko koniec wjazdu (samo ukrycie na starcie też kończy się zdarzeniem transitionend)
+          if (e.target !== el || e.propertyName !== "opacity" || !el.classList.contains("is-visible")) return;
+          delete el.dataset.reveal;
+          el.classList.remove("is-visible");
+          el.style.removeProperty("--reveal-delay");
+          el.removeEventListener("transitionend", done);
+        };
+        targets.forEach((t) => {
+          t.addEventListener("transitionend", done);
+          io.observe(t);
+        });
+        document.documentElement.classList.add("reveal-ready");
+      }
+    </script>
   </body>
 </html>
 

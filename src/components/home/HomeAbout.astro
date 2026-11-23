@@ -1,0 +1,229 @@
+---
+// src/components/home/HomeAbout.astro
+// "Kim jesteśmy": zdjęcia organizatorów, krótka historia i liczby.
+// Treści: src/data/home.ts (TEAM, STORY, STATS); liczba edycji liczy się sama z .mdx.
+import { Image } from "astro:assets";
+import { TEAM, STORY, STATS } from "../../data/home";
+import { getEditions } from "../../data/editions";
+
+const { past } = await getEditions();
+const stats = [
+  { value: String(past.length), label: past.length === 1 ? "edycja za nami 🏁" : "edycje za nami 🏁" },
+  ...STATS,
+];
+---
+
+<section class="about" id="o-nas" aria-labelledby="about-title">
+  <div class="about__wrap">
+    <div class="about__people">
+      {
+        TEAM.map((person, i) => (
+          <figure class:list={["about__person", { "about__person--offset": i % 2 === 1 }]}>
+            {person.photo ? (
+              <Image
+                src={person.photo}
+                alt={person.photoAlt ?? person.name}
+                widths={[400, 600, 900, 1200]}
+                sizes="(min-width: 1024px) 560px, 90vw"
+                class="about__photo"
+                style={person.photoPosition ? `object-position: ${person.photoPosition}` : undefined}
+                loading="lazy"
+              />
+            ) : (
+              <span class="about__photo about__photo--empty" aria-hidden="true">
+                📷
+              </span>
+            )}
+            <figcaption class="about__caption">
+              <span class="about__name">{person.name}</span>
+              {person.role && <span class="about__role">{person.role}</span>}
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+
+    <div class="about__text">
+      <p class="about__eyebrow">👋 Kim jesteśmy</p>
+      <h2 id="about-title" class="about__title">Kto organizuje zawody</h2>
+      {STORY.map((p, i) => <p class:list={["about__p", { "about__p--lead": i === 0 }]}>{p}</p>)}
+
+      <dl class="about__stats">
+        {
+          stats.map((s) => (
+            <div class="about__stat">
+              <dt class="about__stat-label">{s.label}</dt>
+              <dd class="about__stat-value">{s.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      <a href="/about" class="about__more">Poznaj nas bliżej <span class="nudge" aria-hidden="true">👉</span></a>
+    </div>
+  </div>
+</section>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+  @use "../../styles/home" as *;
+
+  .about {
+    background: $home-grey;
+
+    &__wrap {
+      @include home-wrap;
+      display: grid;
+      gap: 48px;
+      align-items: center;
+
+      @include respond-to("lg") {
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+      }
+    }
+
+    &__people {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+
+      @include respond-to("md") {
+        gap: 24px;
+      }
+    }
+
+    &__person {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+
+      &--offset {
+        margin-top: 48px;
+
+        @include respond-to("md") {
+          margin-top: 72px;
+        }
+      }
+    }
+
+    &__photo {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      border-radius: $home-radius;
+
+      &--empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        border: 2px dashed #c9ced8;
+        background:
+          radial-gradient(rgba(15, 23, 42, 0.07) 1px, transparent 1px) 0 0 / 14px 14px,
+          #ffffff;
+      }
+    }
+
+    &__caption {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    &__name {
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 20px;
+      color: $color-primary;
+    }
+
+    &__role {
+      font-size: 15px;
+      color: $home-muted;
+    }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__eyebrow {
+      @include home-eyebrow;
+    }
+
+    &__title {
+      @include home-h2;
+    }
+
+    &__p {
+      margin: 16px 0 0;
+      font-size: 17px;
+      line-height: 1.6;
+      color: $home-text;
+
+      &--lead {
+        margin-top: 24px;
+        font-size: 18px;
+        line-height: 1.55;
+        color: #3f3f46;
+
+        @include respond-to("md") {
+          font-size: 20px;
+        }
+      }
+    }
+
+    &__stats {
+      align-self: stretch;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 40px 0 0;
+      padding-top: 32px;
+      border-top: 1px solid #dcdcda;
+    }
+
+    // Liczba nad podpisem, ale w kodzie podpis (dt) jest pierwszy – poprawna lista opisów
+    &__stat {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+    }
+
+    &__stat-value {
+      margin: 0;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 44px;
+      line-height: 1;
+      color: $color-primary;
+
+      @include respond-to("md") {
+        font-size: 64px;
+      }
+    }
+
+    &__stat-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: $home-text;
+      word-spacing: 0.14em;
+
+      @include respond-to("md") {
+        font-size: 15px;
+      }
+    }
+
+    &__more {
+      @include home-pill;
+      margin-top: 40px;
+    }
+  }
+</style>
