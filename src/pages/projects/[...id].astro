@@ -9,7 +9,7 @@ import ProseImage from "../../components/ProseImage.astro";
 import Gallery from "../../components/Gallery.astro";
 import HomeSignup from "../../components/home/HomeSignup.astro";
 import { getCollection, render, type CollectionEntry } from "astro:content";
-import { Image } from "astro:assets";
+import { Image, getImage } from "astro:assets";
 import { getEditions, formatShortDate } from "../../data/editions";
 
 export async function getStaticPaths() {
@@ -77,22 +77,50 @@ const hasPager = !!prevEdition || !!nextEdition || showNextPlaceholder;
 const signupTone = hasPager ? lastTone : pagerTone;
 
 const MEDALS = ["🥇", "🥈", "🥉"];
+
+// Nagłówek: po zawodach rolka (jeśli już jest), w przeciwnym razie karta zapowiedzi
+const showReel = isPast && !!d.reel;
+const reelPoster = showReel ? await getImage({ src: d.reel!.poster, width: 720, format: "webp" }) : undefined;
+const soonText = isPast
+  ? "Rolka z zawodów pojawi się wkrótce."
+  : dateLong
+    ? `Do zobaczenia ${dateLong}!`
+    : d.planned
+      ? `Planowana: ${d.planned}.`
+      : "Termin ogłosimy wkrótce.";
 const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
 ---
 
 <Layout title={`${d.title} – zawody Obedience`} description={d.description ?? d.title} image={d.image?.url.src}>
   <div class="edition">
-    <!-- HERO -->
+    <!-- HERO: po lewej tekst i fakty, po prawej rolka z zawodów albo karta zapowiedzi -->
     <section class="edition__hero">
-      <a href="/projects" class="edition__back"><span class="edition__back-icon" aria-hidden="true">👈</span> Wszystkie edycje</a>
+      <div class="edition__hero-text">
+        <a href="/projects" class="edition__back"><span class="edition__back-icon" aria-hidden="true">👈</span> Wszystkie edycje</a>
 
-      <p class="edition__eyebrow">
-        <span>🏁 Zawody Obedience</span>
-        <span class="edition__status">{status}</span>
-      </p>
+        <div class="edition__hero-body">
+        <p class="edition__eyebrow">
+          <span>🏁 Zawody Obedience</span>
+          <span class="edition__status">{status}</span>
+        </p>
 
-      <div class="edition__title-row">
         <h1 class="edition__title">{d.title}</h1>
+        {d.description && <p class="edition__lead">{d.description}</p>}
+
+        <dl class="edition__facts">
+          {
+            facts.map((f) => (
+              <div class="edition__fact">
+                <dt>{f.label}</dt>
+                <dd>
+                  {f.value}
+                  {f.sub && <span>{f.sub}</span>}
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+
         {
           (canRegister || d.facebookUrl) && (
             <div class="edition__actions">
@@ -110,41 +138,48 @@ const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
             </div>
           )
         }
-      </div>
-
-      <div class="edition__hero-grid">
-        <div class="edition__hero-text">
-          {d.description && <p class="edition__lead">{d.description}</p>}
-
-          <dl class="edition__facts">
-            {
-              facts.map((f) => (
-                <div class="edition__fact">
-                  <dt>{f.label}</dt>
-                  <dd>
-                    {f.value}
-                    {f.sub && <span>{f.sub}</span>}
-                  </dd>
-                </div>
-              ))
-            }
-          </dl>
         </div>
-
-        {
-          d.image && (
-            <figure class="edition__poster">
-              <Image
-                src={d.image.url}
-                alt={d.image.alt}
-                widths={[480, 720, 1080, 1440]}
-                sizes="(min-width: 1024px) 480px, 100vw"
-                loading="eager"
-              />
-            </figure>
-          )
-        }
       </div>
+
+      {
+        showReel ? (
+          <div class="edition__media">
+            <video
+              class="edition__video"
+              src={d.reel!.src}
+              poster={reelPoster!.src}
+              autoplay
+              muted
+              loop
+              playsinline
+              preload="metadata"
+              aria-label={d.reel!.alt}
+              data-reel-video
+            />
+            <span class="edition__credit">🎬 Rolka · {d.reel!.credit ?? d.title}</span>
+            <button type="button" class="edition__pause" aria-label="Zatrzymaj wideo" data-reel-pause>
+              <span aria-hidden="true">❚❚</span>
+            </button>
+          </div>
+        ) : (
+          <div class="edition__soon">
+            <svg class="edition__soon-mark" viewBox="0 0 64 56" fill="none" aria-hidden="true">
+              <path d="M16 4h32l14 14-30 34L2 18 16 4Z" />
+              <path d="M2 18h60M16 4l8 14 8-14 8 14 8-14M24 18l8 34 8-34" />
+            </svg>
+            <p class="edition__soon-title">{d.title}</p>
+            <p class="edition__soon-text">{soonText}</p>
+            {!isPast &&
+              (canRegister ? (
+                <a href={d.formUrl!} class="edition__soon-btn" target="_blank" rel="noopener noreferrer">
+                  📝 Zapisz się<span class="sr-only"> (otwiera się w nowej karcie)</span>
+                </a>
+              ) : (
+                <a href="#powiadom" class="edition__soon-btn">🔔 Powiadom mnie</a>
+              ))}
+          </div>
+        )
+      }
     </section>
 
     <!-- PRZYKLEJONY PASEK SEKCJI -->
@@ -374,6 +409,39 @@ const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
 </Layout>
 
 <script>
+  // Rolka w nagłówku: startuje sama (bez dźwięku); przy oszczędzaniu energii – po pierwszym dotknięciu.
+  // Przycisk ❚❚/▶ zatrzymuje i wznawia.
+  const reel = document.querySelector<HTMLVideoElement>("[data-reel-video]");
+  const reelBtn = document.querySelector<HTMLButtonElement>("[data-reel-pause]");
+  if (reel && reelBtn) {
+    let stoppedByUser = false;
+    const start = () => {
+      reel.muted = true;
+      return reel.play().catch(() => {});
+    };
+    const sync = () => {
+      const paused = reel.paused;
+      reelBtn.setAttribute("aria-label", paused ? "Odtwórz wideo" : "Zatrzymaj wideo");
+      reelBtn.innerHTML = `<span aria-hidden="true">${paused ? "▶" : "❚❚"}</span>`;
+    };
+    const onFirstTouch = (e: Event) => {
+      if (e.target instanceof Node && reelBtn.contains(e.target)) return;
+      if (!stoppedByUser && reel.paused) start();
+    };
+    ["touchstart", "pointerdown"].forEach((type) =>
+      document.addEventListener(type, onFirstTouch, { once: true, passive: true })
+    );
+    reelBtn.addEventListener("click", () => {
+      stoppedByUser = !reel.paused;
+      if (reel.paused) start();
+      else reel.pause();
+    });
+    reel.addEventListener("play", sync);
+    reel.addEventListener("pause", sync);
+    start();
+    sync();
+  }
+
   // Podświetlenie aktywnej sekcji w przyklejonym pasku
   const nav = document.querySelector<HTMLElement>("[data-subnav]");
   if (nav) {
@@ -404,13 +472,54 @@ const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
     line-height: 1.6;
 
     // ---------- HERO ----------
+    // Nagłówek: 2/3 tekst, 1/3 rolka 9:16 – jak na stronie głównej
     &__hero {
       max-width: 1280px;
       margin: 0 auto;
       padding: 112px 24px 56px;
+      display: grid;
+      gap: 40px;
+      align-items: center;
 
       @include respond-to("md") {
         padding: 128px 24px 72px;
+      }
+
+      @include respond-to("lg") {
+        grid-template-columns: 2fr 1fr;
+        gap: 72px;
+        align-items: stretch;
+      }
+    }
+
+    // Na komputerze link "Wszystkie edycje" stoi na wysokości górnej krawędzi rolki,
+    // a reszta (tytuł, fakty, przyciski) jest wyśrodkowana względem rolki:
+    // trzy wiersze 1fr / treść / 1fr – link w pierwszym, przy górze
+    &__hero-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+
+      @include respond-to("lg") {
+        display: grid;
+        grid-template-rows: 1fr auto 1fr;
+        gap: 0;
+
+        > .edition__back {
+          align-self: start;
+        }
+      }
+    }
+
+    &__hero-body {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+
+      @include respond-to("lg") {
+        padding: 24px 0;
       }
     }
 
@@ -419,6 +528,7 @@ const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
       align-items: center;
       gap: 6px;
       min-height: 44px;
+      margin-top: -10px; // pole kliknięcia 44 px, ale tekst równo z górą rolki
       font-size: 15px;
       font-weight: 500;
       color: $color-primary;
@@ -443,28 +553,116 @@ const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
       }
     }
 
-    // Pod tytułem: opis + kafelki po lewej, plakat po prawej – od górnej krawędzi opisu
-    // do dolnej krawędzi kafelków (na telefonie plakat w naturalnych proporcjach pod spodem)
-    &__hero-grid {
-      display: grid;
-      gap: 32px;
-      margin-top: 28px;
+    // ---------- rolka / karta zapowiedzi ----------
+    &__media,
+    &__soon {
+      position: relative;
+      justify-self: center;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 360px;
+      aspect-ratio: 9 / 16;
+      border-radius: 28px;
+      box-shadow: 0 30px 60px -30px rgba(15, 23, 42, 0.45);
 
       @include respond-to("lg") {
-        grid-template-columns: 1.5fr 1fr;
-        gap: 48px;
-        align-items: stretch;
+        max-width: none;
       }
     }
 
-    &__hero-text {
+    &__media {
+      overflow: hidden;
+      background: #1e293b;
+    }
+
+    &__video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &__credit {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      font-family: $font-family-heading;
+      font-size: 12px;
+      color: #ffffff;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+
+    &__pause {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      border: 0;
+      background: rgba(255, 255, 255, 0.92);
+      color: $color-primary;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    // Karta jak "III edycja" na stronie głównej – granat, żółta przerywana ramka, diament
+    &__soon {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 28px;
+      background: $color-primary;
+      border: 2px dashed $home-yellow;
+      color: #ffffff;
+    }
+
+    &__soon-mark {
+      width: 48px;
+      overflow: visible;
+
+      path {
+        stroke: $home-yellow;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+    }
+
+    &__soon-title {
+      margin: 0;
+      font-family: $font-family-heading;
+      font-weight: 600;
+      font-size: 28px;
+      line-height: 1.1;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    &__soon-text {
+      margin: 0;
+      font-size: 16px;
+      color: #aab4c8;
+    }
+
+    &__soon-btn {
+      @include home-button-dark;
+      background: $home-yellow;
+      color: $color-primary;
+
+      &:hover {
+        background: #ffffff;
+        color: $color-primary;
+      }
     }
 
     &__eyebrow {
-      margin: 20px 0 0;
+      margin: 0;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -485,15 +683,6 @@ const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
       background: $home-grey;
       padding: 4px 12px;
       border-radius: 999px;
-    }
-
-    &__title-row {
-      margin-top: 16px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px 24px;
     }
 
     &__title {
@@ -582,26 +771,6 @@ const withPhotos = !!d.results?.length && d.results.every((r) => r.photo);
           font-weight: 400;
           font-size: 13px;
           color: $home-muted;
-        }
-      }
-    }
-
-    &__poster {
-      position: relative;
-      margin: 0;
-
-      :global(img) {
-        display: block;
-        width: 100%;
-        height: auto;
-        border-radius: 28px;
-        box-shadow: 0 30px 60px -30px rgba(15, 23, 42, 0.45);
-
-        @include respond-to("lg") {
-          position: absolute;
-          inset: 0;
-          height: 100%;
-          object-fit: cover;
         }
       }
     }

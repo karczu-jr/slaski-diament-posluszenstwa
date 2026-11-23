@@ -45,6 +45,16 @@ const projects = defineCollection({
       url: image(), // ZMIENIONO: z.string() na image()
       alt: z.string(),
     }).optional(),
+    // Rolka z zawodów (pionowe wideo 9:16) – po zawodach pokazujemy ją w nagłówku strony edycji.
+    // src: plik z folderu public, np. "/video/rolka.mp4"; poster: kadr pokazywany przed startem filmu.
+    reel: z
+      .object({
+        src: z.string(),
+        poster: image(),
+        alt: z.string(),
+        credit: z.string().optional(),
+      })
+      .optional(),
     // Planowana edycja bez konkretnej daty, np. "wiosna 2027" – pokazujemy ją jako "następną edycję"
     planned: z.string().optional(),
     // --- Fakty w hero strony edycji ---
