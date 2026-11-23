@@ -86,7 +86,7 @@
   // W MDX: <div className="plain-list"> + pusta linia + lista + pusta linia + </div>
   :global(.plain-list ul li) {
     padding-left: 0;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.55rem;
 
     &::before {
       content: none;
