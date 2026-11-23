@@ -28,7 +28,7 @@ export const VALUES = [
 ];
 
 export const SCHOOL = {
-  name: "Ułóż Psa",
+  name: "Ułóż\u00A0Psa", // niełamliwa spacja – nazwa szkoły nie rozpada się na dwie linie
   text: "Szkolenie psów i Obedience w Gliwicach. Oboje trenujemy i startujemy w jej barwach.",
   url: "https://ulozpsa.pl",
   linkText: "Odwiedź ulozpsa.pl",

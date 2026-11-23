@@ -93,9 +93,32 @@ const poster = await getImage({ src: reel.poster, width: 1440, format: "webp" })
       btn.setAttribute("aria-label", paused ? "Odtwórz wideo" : "Zatrzymaj wideo");
       btn.innerHTML = `<span aria-hidden="true">${paused ? "▶" : "❚❚"}</span>`;
     };
-    // Osoby z wyłączonymi animacjami nie dostają autoodtwarzania
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) video.pause();
-    btn.addEventListener("click", () => (video.paused ? video.play() : video.pause()));
+    // Rolka startuje sama – także przy "Ogranicz ruch"; zatrzymać ją można przyciskiem.
+    // Telefon w trybie oszczędzania energii blokuje autoodtwarzanie – wtedy rolka rusza
+    // przy pierwszym dotknięciu ekranu (o ile ktoś nie zatrzymał jej przyciskiem).
+    let stoppedByUser = false;
+    const start = () => {
+      video.muted = true; // bez dźwięku przeglądarki pozwalają na autoodtwarzanie
+      return video.play().catch(() => {});
+    };
+    const onFirstTouch = (e: Event) => {
+      if (e.target instanceof Node && btn.contains(e.target)) return;
+      if (!stoppedByUser && video.paused) start();
+    };
+    ["touchstart", "pointerdown"].forEach((type) =>
+      document.addEventListener(type, onFirstTouch, { once: true, passive: true })
+    );
+    start();
+
+    btn.addEventListener("click", () => {
+      if (video.paused) {
+        stoppedByUser = false;
+        start();
+      } else {
+        stoppedByUser = true;
+        video.pause();
+      }
+    });
     video.addEventListener("play", sync);
     video.addEventListener("pause", sync);
     sync();
