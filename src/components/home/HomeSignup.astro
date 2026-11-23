@@ -1,7 +1,8 @@
 ---
 // src/components/home/HomeSignup.astro
-// "Nie przegap zapisów" – biała karta na szarym tle z polem e-mail.
+// "Poznaj termin kolejnych zawodów" – biała karta na szarym tle z polem e-mail.
 // Adres formularza Brevo ustawiamy w src/data/home.ts (SIGNUP.action).
+// Wysyłka idzie w tle (bez przechodzenia na stronę Brevo), komunikat pokazuje się pod polem.
 import { SIGNUP } from "../../data/home";
 
 interface Props {
@@ -15,13 +16,13 @@ const connected = SIGNUP.action !== "";
 <section class:list={["signup", `signup--${tone}`]} id="powiadom" aria-labelledby="signup-title">
   <div class="signup__wrap">
     <div class="signup__card">
-      <h2 id="signup-title" class="signup__title">Nie przegap zapisów <span aria-hidden="true">🔔</span></h2>
+      <h2 id="signup-title" class="signup__title">Poznaj termin kolejnych zawodów <span aria-hidden="true">🔔</span></h2>
 
       <form
         class="signup__form"
         method="post"
         action={connected ? SIGNUP.action : undefined}
-        data-signup={connected ? undefined : "offline"}
+        data-signup={connected ? "brevo" : "offline"}
       >
         <label for="signup-email" class="signup__label">Adres e-mail</label>
         <div class="signup__row">
@@ -36,8 +37,11 @@ const connected = SIGNUP.action !== "";
           />
           <button type="submit" class="signup__btn"><span class="nudge" aria-hidden="true">👉</span> Zapisuję się</button>
         </div>
+        <!-- Pułapka na boty: ludzie tego pola nie widzą, boty je wypełniają, a Brevo odrzuca takie zgłoszenia -->
+        <input type="text" name="email_address_check" value="" tabindex="-1" autocomplete="off" aria-hidden="true" class="signup__trap" />
+        <input type="hidden" name="locale" value="pl" />
         <p class="signup__note">
-          Wyślemy jednego maila, gdy ruszą zapisy. Wypiszesz się jednym kliknięciem.{" "}
+          Napiszemy, gdy ogłosimy termin kolejnych zawodów. Wypiszesz się jednym kliknięciem.{" "}
           <a href={SIGNUP.privacyUrl}>Polityka prywatności</a>
         </p>
         <p class="signup__status" role="status" aria-live="polite"></p>
@@ -47,12 +51,52 @@ const connected = SIGNUP.action !== "";
 </section>
 
 <script>
-  // Dopóki formularz nie jest podłączony do Brevo – nic nie wysyłamy, tylko informujemy
-  const form = document.querySelector<HTMLFormElement>('[data-signup="offline"]');
-  form?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const status = form.querySelector(".signup__status");
-    if (status) status.textContent = "Zapisy na powiadomienia uruchomimy wkrótce. Dziękujemy za cierpliwość!";
+  // Komunikaty – te same teksty co w ustawieniach formularza w Brevo
+  const MSG = {
+    sending: "Wysyłam…",
+    success: "Dzięki! Sprawdź skrzynkę i potwierdź zapis 📬",
+    error: "Coś poszło nie tak. Spróbuj ponownie za chwilę.",
+    offline: "Powiadomienia uruchomimy wkrótce. Dziękujemy za cierpliwość!",
+  };
+  // Człowiek nie wpisze adresu szybciej – szybsze zgłoszenia traktujemy jak bota
+  const MIN_MS = 2000;
+  const openedAt = Date.now();
+
+  document.querySelectorAll<HTMLFormElement>("form[data-signup]").forEach((form) => {
+    const status = form.querySelector<HTMLElement>(".signup__status");
+    const btn = form.querySelector<HTMLButtonElement>("button[type=submit]");
+    const say = (text: string, isError = false) => {
+      if (!status) return;
+      status.textContent = text;
+      status.classList.toggle("signup__status--error", isError);
+    };
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (form.dataset.signup === "offline") return say(MSG.offline);
+      if (!form.reportValidity()) return;
+
+      const data = new FormData(form);
+      // Bot (pułapka wypełniona albo zbyt szybko) – udajemy sukces, nic nie wysyłamy
+      if (data.get("email_address_check") || Date.now() - openedAt < MIN_MS) {
+        form.reset();
+        return say(MSG.success);
+      }
+
+      btn?.setAttribute("disabled", "");
+      say(MSG.sending);
+      try {
+        const res = await fetch(`${form.action}?isAjax=1`, { method: "POST", body: data });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.success) throw new Error("brevo");
+        form.reset();
+        say(MSG.success);
+      } catch {
+        say(MSG.error, true);
+      } finally {
+        btn?.removeAttribute("disabled");
+      }
+    });
   });
 </script>
 
@@ -157,6 +201,20 @@ const connected = SIGNUP.action !== "";
       }
     }
 
+    &__btn[disabled] {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    // Pole-pułapka na boty: poza ekranem (nie display:none – część botów to sprawdza)
+    &__trap {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
     &__status {
       margin: 0;
       font-size: 15px;
@@ -165,6 +223,10 @@ const connected = SIGNUP.action !== "";
 
       &:empty {
         display: none;
+      }
+
+      &--error {
+        color: #b91c1c;
       }
     }
   }

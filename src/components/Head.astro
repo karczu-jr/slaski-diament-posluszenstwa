@@ -6,9 +6,11 @@ interface Props {
   title: string;
   description: string;
   image?: string;
+  /** true = Google nie pokazuje tej strony w wynikach (np. strona po potwierdzeniu zapisu) */
+  noindex?: boolean;
 }
 
-const { title, description, image = "/sdp1.jpg" } = Astro.props;
+const { title, description, image = "/sdp1.jpg", noindex = false } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
 const socialImageUrl = new URL(image, Astro.url.origin).href;
 ---
@@ -19,6 +21,7 @@ const socialImageUrl = new URL(image, Astro.url.origin).href;
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="canonical" href={canonicalURL} />
 <meta name="generator" content={Astro.generator} />
+{noindex && <meta name="robots" content="noindex" />}
 
 <!-- Fonty -->
 

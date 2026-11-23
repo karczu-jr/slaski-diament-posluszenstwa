@@ -1,0 +1,90 @@
+---
+// src/pages/zapis-potwierdzony.astro
+// Strona, na którą Brevo przekierowuje po kliknięciu linku "Potwierdź zapis" w mailu.
+// Ukryta przed Google (noindex) i pominięta w mapie strony.
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout
+  title="Zapis potwierdzony"
+  description="Jesteś na liście powiadomień. Napiszemy, gdy ogłosimy termin kolejnych zawodów."
+  noindex
+>
+  <section class="confirmed" aria-labelledby="confirmed-title">
+    <div class="confirmed__wrap">
+      <p class="confirmed__eyebrow">🔔 Powiadomienia</p>
+      <h1 id="confirmed-title" class="confirmed__title">Gotowe! Jesteś na liście <span aria-hidden="true">🎉</span></h1>
+      <p class="confirmed__lead">
+        Napiszemy, gdy ogłosimy termin kolejnych zawodów. Do tego czasu zajrzyj do aktualności albo zobacz, jak było
+        na poprzednich edycjach.
+      </p>
+      <div class="confirmed__actions">
+        <a href="/blog" class="confirmed__btn">📰 Aktualności</a>
+        <a href="/projects" class="confirmed__pill">🏆 Poprzednie edycje</a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+  @use "../styles/mixins" as *;
+  @use "../styles/home" as *;
+
+  .confirmed {
+    background: #ffffff;
+    color: $home-text;
+
+    &__wrap {
+      max-width: 1280px;
+      min-height: 60vh;
+      margin: 0 auto;
+      padding: 120px 24px 96px;
+
+      @include respond-to("md") {
+        padding: 160px 24px 128px;
+      }
+    }
+
+    &__eyebrow {
+      @include home-eyebrow;
+    }
+
+    &__title {
+      @include home-h2;
+      font-weight: 600;
+      font-size: 36px;
+
+      @include respond-to("md") {
+        font-size: 52px;
+      }
+    }
+
+    &__lead {
+      margin: 16px 0 0;
+      max-width: 640px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #3f3f46;
+
+      @include respond-to("md") {
+        font-size: 20px;
+      }
+    }
+
+    &__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    &__btn {
+      @include home-button-dark;
+    }
+
+    &__pill {
+      @include home-pill;
+    }
+  }
+</style>

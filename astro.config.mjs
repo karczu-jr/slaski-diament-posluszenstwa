@@ -24,5 +24,9 @@ export default defineConfig({
       provider: fontProviders.google(),
     },
   ],
-  integrations: [sitemap(), mdx()],
+  integrations: [
+    // strony tylko "techniczne" (np. po potwierdzeniu zapisu) nie trafiają do mapy strony
+    sitemap({ filter: (page) => !page.includes("/zapis-potwierdzony") }),
+    mdx(),
+  ],
 });

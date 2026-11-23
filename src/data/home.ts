@@ -56,9 +56,11 @@ export const STORY = [
   "Oboje reprezentujemy szkołę Ułóż Psa: Magda jako trenerka i zawodniczka, Mateusz jako zawodnik. Robimy zawody, na które sami chcielibyśmy jeździć: dobrze zorganizowane, spokojne i życzliwe dla psa i przewodnika. Chcemy, żeby każdy zespół, od debiutantów po doświadczonych zawodników, wyjeżdżał od nas z dobrymi wspomnieniami i chęcią powrotu.",
 ];
 
-// Formularz "Nie przegap zapisów" – adres formularza Brevo wkleimy po założeniu konta.
-// Dopóki jest pusty, formularz pokazuje tylko komunikat i nic nie wysyła.
+// Formularz "Poznaj termin kolejnych zawodów" – adres formularza Brevo (Marketing → Formularze → Share).
+// Zapis trafia na listę "Powiadomienia o zawodach" (double opt-in). Pusty adres = formularz nic nie wysyła.
+// Po kliknięciu w link w mailu Brevo przekierowuje na /zapis-potwierdzony.
 export const SIGNUP = {
-  action: "",
+  action:
+    "https://259a1bfc.sibforms.com/serve/MUIFALLSqJM1iYwTaAtGMNihcwTLqVNTbErmy0UtfK8ixNgiD8_NFj_E3fNQlw839ykRaDdF4KhXQ5WsvtwX_RMYVxn0GLze7-u4uPliB1O_lX9cJb0cj_f5D-AkfVbOyRLTHszdXJUJcSKiVmofUzAEDDozUSJ-Mp2kD1Zk35BURE6eMKS1phD1EOnEAnz95RJgc-tjCOrJR4K4ng==",
   privacyUrl: "/polityka-prywatnosci",
 };

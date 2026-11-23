@@ -13,14 +13,15 @@ type Props = {
   title: string;
   description: string;
   image?: string;
+  noindex?: boolean;
 };
 
-const { title, description, image } = Astro.props;
+const { title, description, image, noindex } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="pl">
-  <Head title={`${title} | ${SITE.TITLE}`} description={description} image={image} />
+  <Head title={`${title} | ${SITE.TITLE}`} description={description} image={image} noindex={noindex} />
   <body>
     <!-- Skocz do treści (A11y) -->
     <a href="#main-content" class="skip-link">
