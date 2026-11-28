@@ -26,7 +26,7 @@ const photosLabel = `${n} ${n === 1 ? "zdjęcie" : [2, 3, 4].includes(n % 10) &&
 
 type Slot = { kind: "photo" | "classes" | "credit" | "more"; ratio: string };
 type Tile =
-  | { kind: "photo"; ratio: string; src: ImageMetadata; alt: string }
+  | { kind: "photo"; ratio: string; src: ImageMetadata; alt: string; position?: string }
   | { kind: "classes" | "credit" | "more"; ratio: string };
 
 const P = (ratio: string): Slot => ({ kind: "photo", ratio });
@@ -43,7 +43,7 @@ const columns: Tile[][] = LAYOUT.map((col) =>
   col.flatMap((slot): Tile[] => {
     if (slot.kind !== "photo") return [slot as Tile];
     const p = photos[next++];
-    return p ? [{ kind: "photo", ratio: slot.ratio, src: p.url, alt: p.alt }] : [];
+    return p ? [{ kind: "photo", ratio: slot.ratio, src: p.url, alt: p.alt, position: p.homePosition }] : [];
   })
 );
 const halves = [columns.slice(0, 2), columns.slice(2, 4)];
@@ -69,6 +69,7 @@ const halves = [columns.slice(0, 2), columns.slice(2, 4)];
                           widths={[400, 600, 900, 1200]}
                           sizes="(min-width: 1024px) 580px, 100vw"
                           class="gallery__img"
+                          style={t.position ? `object-position: ${t.position}` : undefined}
                           loading="lazy"
                         />
                       )}

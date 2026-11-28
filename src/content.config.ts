@@ -103,6 +103,8 @@ const projects = defineCollection({
         alt: z.string(),
         // home: true – zdjęcie trafia do galerii "Zdjęcia z ringu" na stronie głównej
         home: z.boolean().optional(),
+        // homePosition: kadr w mozaice na stronie głównej (CSS object-position), np. "90% 50%"
+        homePosition: z.string().optional(),
       })
     ).optional(),
     partners: z
